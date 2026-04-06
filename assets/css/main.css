@@ -1,0 +1,22 @@
+.wp-site-blocks {
+	min-height: 100vh;
+}
+
+.wp-block-navigation .wp-block-navigation-item__content {
+	text-decoration: none;
+}
+
+.wp-block-post-featured-image img {
+	border-radius: 16px;
+}
+
+.is-style-outline > .wp-block-button__link {
+	border: 1px solid currentColor;
+	background: transparent;
+}
+
+@media (max-width: 781px) {
+	.wp-block-columns {
+		gap: 1rem;
+	}
+}

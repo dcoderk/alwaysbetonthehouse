@@ -1,0 +1,29 @@
+<!-- wp:template-part {"slug":"header","theme":"clientstarter","tagName":"header"} /-->
+
+<!-- wp:pattern {"slug":"clientstarter/hero-home"} /-->
+<!-- wp:pattern {"slug":"clientstarter/services-grid"} /-->
+<!-- wp:pattern {"slug":"clientstarter/cta-simple"} /-->
+
+<!-- wp:group {"tagName":"main","layout":{"type":"constrained"}} -->
+<main class="wp-block-group">
+	<!-- wp:query {"query":{"perPage":3,"postType":"post","order":"desc","orderBy":"date","inherit":false}} -->
+	<div class="wp-block-query">
+		<!-- wp:heading {"level":2,"fontSize":"xl"} -->
+		<h2 class="wp-block-heading has-xl-font-size">Latest Posts</h2>
+		<!-- /wp:heading -->
+
+		<!-- wp:post-template {"layout":{"type":"grid","columnCount":3}} -->
+			<!-- wp:group {"style":{"spacing":{"padding":{"top":"1rem","bottom":"1rem","left":"1rem","right":"1rem"}},"border":{"radius":"16px"}},"backgroundColor":"muted","layout":{"type":"constrained"}} -->
+			<div class="wp-block-group has-muted-background-color has-background" style="border-radius:16px;padding-top:1rem;padding-right:1rem;padding-bottom:1rem;padding-left:1rem">
+				<!-- wp:post-featured-image {"isLink":true,"aspectRatio":"16/9"} /-->
+				<!-- wp:post-title {"isLink":true,"level":3,"fontSize":"lg"} /-->
+				<!-- wp:post-excerpt {"moreText":"Read more"} /-->
+			</div>
+			<!-- /wp:group -->
+		<!-- /wp:post-template -->
+	</div>
+	<!-- /wp:query -->
+</main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","theme":"clientstarter","tagName":"footer"} /-->
