@@ -39,5 +39,13 @@ function property_listings_enqueue_assets() {
 		array( 'property-listings-fonts' ),
 		$theme->get( 'Version' )
 	);
+
+	wp_enqueue_script(
+		'property-listings-main',
+		get_theme_file_uri( '/assets/js/main.js' ),
+		array(),
+		$theme->get( 'Version' ),
+		true
+	);
 }
 add_action( 'wp_enqueue_scripts', 'property_listings_enqueue_assets' );

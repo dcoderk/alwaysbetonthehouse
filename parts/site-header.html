@@ -17,13 +17,13 @@
 
 			<!-- wp:group {"className":"search-pill-wrap","layout":{"type":"default"}} -->
 			<div class="wp-block-group search-pill-wrap">
-				<!-- wp:buttons -->
-				<div class="wp-block-buttons">
-					<!-- wp:button {"className":"search-pill"} -->
-					<div class="wp-block-button search-pill"><a class="wp-block-button__link wp-element-button" href="/?s=">Search</a></div>
-					<!-- /wp:button -->
+				<!-- wp:html -->
+				<div class="header-search" data-header-search>
+					<button class="header-search__toggle" id="searchToggle" type="button" aria-expanded="false" aria-controls="searchPanel">
+						<span>Search</span>
+					</button>
 				</div>
-				<!-- /wp:buttons -->
+				<!-- /wp:html -->
 			</div>
 			<!-- /wp:group -->
 
@@ -32,5 +32,17 @@
 		<!-- /wp:group -->
 	</div>
 	<!-- /wp:group -->
+
+	<!-- wp:html -->
+	<div class="search-panel" id="searchPanel" hidden>
+		<div class="search-wrap">
+			<form class="header-search__form" role="search" method="get" action="/">
+				<label class="screen-reader-text" for="header-search-input">Search the site</label>
+				<input id="header-search-input" class="header-search__input" type="search" name="s" placeholder="Search episodes, homes, or agents" />
+				<button class="header-search__submit" type="submit">Go</button>
+			</form>
+		</div>
+	</div>
+	<!-- /wp:html -->
 </header>
 <!-- /wp:group -->

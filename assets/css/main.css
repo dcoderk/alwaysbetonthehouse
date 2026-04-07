@@ -14,7 +14,7 @@
 	--text-dark: #1f1c19;
 	--muted: #d5cab9;
 	--muted-dark: #6f655a;
-	--line: rgba(212, 165, 68, 0.26);
+	 --line:rgba(212,165,68,.26);
 	--line-strong: rgba(212, 165, 68, 0.5);
 	--gold: #d4a544;
 	--gold-2: #f0c46d;
@@ -43,9 +43,12 @@
 	}
 }
 
+body {
+	background-color: var(--bg);
+}
+
 
 /* header */
-
 .site-header {
 	position: sticky;
 	top: 0;
@@ -142,35 +145,81 @@
 	min-width: auto;
 }
 
-.site-header .search-pill-wrap .wp-block-buttons,
-.site-header .search-pill-wrap .wp-block-button {
-	margin: 0;
-}
-
-.site-header .search-pill-wrap .wp-element-button {
+.site-header .header-search__toggle {
 	min-height: 52px;
 	border: 1px solid rgba(102, 212, 137, 0.45);
 	border-radius: 999px;
 	padding: 0.65rem 1.2rem;
 	background: #1f8d45;
-	color: #fff !important;
+	color: #fff;
 	font-size: 0.96rem;
 	font-weight: 700;
-	text-decoration: none;
 	cursor: pointer;
 	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
 	transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
 }
 
-.site-header .search-pill-wrap .wp-element-button:hover {
+.site-header .header-search__toggle:hover {
 	background: #16783a;
 	transform: translateY(-1px);
 	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
 }
 
-.site-header .search-pill-wrap .wp-element-button:focus-visible {
-	outline: 2px solid var(--gold-2);
+.site-header .header-search__toggle:focus-visible,
+.site-header .header-search__input:focus-visible,
+.site-header .header-search__submit:focus-visible {
 	outline-offset: 2px;
+}
+
+.site-header .header-search__toggle[aria-expanded="true"] {
+	background: #16783a;
+}
+
+.site-header .search-panel {
+	border-top: 1px solid rgba(255, 255, 255, 0.75);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.75);
+	background: #0a0a0a;
+}
+
+.site-header .search-wrap {
+	width: min(calc(100% - 40px), var(--container));
+	margin-inline: auto;
+	padding: 16px 0 20px;
+}
+
+.site-header .header-search__form {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.site-header .header-search__input {
+	flex: 1 1 auto;
+	min-width: 0;
+	min-height: 54px;
+	padding: 0 20px;
+	border: 1px solid rgba(212, 165, 68, 0.28);
+	border-radius: 14px;
+	background: #111111;
+	color: #fff;
+}
+
+.site-header .header-search__input::placeholder {
+	color: rgba(239, 231, 216, 0.45);
+}
+
+.site-header .header-search__submit {
+	flex: 0 0 auto;
+	min-height: 54px;
+	min-width: 110px;
+	padding: 0 26px;
+	border: 0;
+	border-radius: 18px;
+	background: var(--gold);
+	color: #111;
+	font-weight: 700;
+	font-size: 1rem;
+	cursor: pointer;
 }
 
 .site-header .site-nav {
@@ -246,6 +295,24 @@ h3,
 	.site-header .search-pill-wrap {
 		flex-basis: 100%;
 		min-width: 100%;
+	}
+
+	.site-header .header-search__toggle {
+		width: 100%;
+	}
+
+	.site-header .search-wrap {
+		width: 100%;
+		padding: 14px 12px 18px;
+	}
+
+	.site-header .header-search__form {
+		flex-wrap: wrap;
+	}
+
+	.site-header .header-search__input,
+	.site-header .header-search__submit {
+		width: 100%;
 	}
 
 	.site-header .site-nav {
