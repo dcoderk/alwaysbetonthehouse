@@ -1,8 +1,9 @@
 <?php
 /**
- * ClientStarter functions.
+ * Property Listings functions.
  *
- * @package ClientStarter
+ * @package PropertyListings
  */
+
 
 require_once get_theme_file_path( '/inc/setup.php' );

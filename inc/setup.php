@@ -2,35 +2,42 @@
 /**
  * Theme setup.
  *
- * @package ClientStarter
+ * @package PropertyListings
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-function clientstarter_setup() {
-	load_theme_textdomain( 'clientstarter', get_template_directory() . '/languages' );
+function property_listings_setup() {
+	load_theme_textdomain( 'property-listings', get_template_directory() . '/languages' );
 
 	add_editor_style( 'assets/css/editor.css' );
 
 	register_block_pattern_category(
-		'clientstarter',
+		'property-listings',
 		array(
-			'label' => __( 'ClientStarter', 'clientstarter' ),
+			'label' => __( 'Property Listings', 'property-listings' ),
 		)
 	);
 }
-add_action( 'after_setup_theme', 'clientstarter_setup' );
+add_action( 'after_setup_theme', 'property_listings_setup' );
 
-function clientstarter_enqueue_assets() {
+function property_listings_enqueue_assets() {
 	$theme = wp_get_theme();
 
 	wp_enqueue_style(
-		'clientstarter-main',
-		get_theme_file_uri( '/assets/css/main.css' ),
+		'property-listings-fonts',
+		'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap',
 		array(),
+		null
+	);
+
+	wp_enqueue_style(
+		'property-listings-main',
+		get_theme_file_uri( '/assets/css/main.css' ),
+		array( 'property-listings-fonts' ),
 		$theme->get( 'Version' )
 	);
 }
-add_action( 'wp_enqueue_scripts', 'clientstarter_enqueue_assets' );
+add_action( 'wp_enqueue_scripts', 'property_listings_enqueue_assets' );
