@@ -216,6 +216,76 @@ body {
 }
 
 
+/* Custom: Host Or Agent Intro Section */
+.eyebrow {
+	color: var(--gold-2);
+	font-size: 0.9rem;
+	font-weight: 700;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+}
+
+.host-copy p {
+    font-family: 'Inter';
+    line-height: 1.6;
+}
+
+.host-section {
+	padding: 12px 0 60px;
+}
+
+.host-shell {
+	width: min(calc(100% - 40px), var(--container));
+	margin-inline: auto;
+}
+
+.host-layout {
+	display: grid;
+	grid-template-columns: 400px minmax(0, 1fr);
+	gap: 42px;
+	align-items: center;
+}
+
+.host-photo-wrap {
+	width: 100%;
+}
+
+.host-photo {
+	width: 400px;
+	height: 600px;
+	object-fit: cover;
+	border-radius: 30px;
+	border: 1px solid var(--line-strong);
+	box-shadow: var(--shadow);
+	background: #0f1010;
+}
+
+.host-photo-placeholder {
+	background:
+		linear-gradient(135deg, rgba(212, 165, 68, 0.14), rgba(255, 255, 255, 0.03)),
+		#0f1010;
+}
+
+.host-copy h1 {
+	margin: 0 0 10px;
+	font-size: clamp(2rem, 4vw, 2rem);
+	line-height: 0.96;
+	color: #fff;
+}
+
+.host-copy h2 {
+	font-size: 3.5rem;
+	line-height: 0.95;
+	margin: 0 0 14px;
+	color: #f6ebd7;
+}
+
+.host-copy p {
+	max-width: 760px;
+	color: #eadfcd;
+}
+
+
 /* header */
 .site-header {
 	position: sticky;
@@ -441,9 +511,13 @@ body {
 	display: none;
 }
 
-h1,
+h1 {
+	font-family: "Inter", serif;
+}
+
 h2,
 h3,
+h4,
 .wp-block-post-title {
 	font-family: "Cormorant Garamond", serif;
 }
@@ -478,6 +552,23 @@ a.wp-block-social-link-anchor:focus-visible::after {
 }
 
 @media (max-width: 860px) {
+	.host-shell {
+		width: min(calc(100% - 24px), var(--container));
+	}
+
+	.host-layout {
+		grid-template-columns: 1fr;
+		gap: 26px;
+	}
+
+	.host-photo-wrap {
+		max-width: 400px;
+	}
+
+	.host-copy h2 {
+		font-size: clamp(2.2rem, 8vw, 3rem);
+	}
+
 	.hero-slider-shell {
 		width: min(calc(100% - 24px), var(--container));
 		margin-top: -56px;
@@ -721,6 +812,23 @@ a.wp-block-social-link-anchor:focus-visible::after {
 }
 
 @media (max-width: 520px) {
+	.host-section {
+		padding-bottom: 42px;
+	}
+
+	.host-photo {
+		width: 400px;
+		height: 600px;
+	}
+
+	.host-copy h1 {
+		font-size: 1.8rem;
+	}
+
+	.host-copy h2 {
+		font-size: 2.35rem;
+	}
+
 	.hero {
 		padding-bottom: 24px;
 	}

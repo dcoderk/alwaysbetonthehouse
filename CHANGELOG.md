@@ -28,6 +28,14 @@
 - Removed the small slider thumbnail images
 - Added a show/hide text option for the slider block
 
+### Host Section
+
+- Added a `Host Section` custom block
+- Added editable Media Library host photo support
+- Added editable title, eyebrow, host name, and description fields
+- Added a show/hide title option for the host section block
+- Added host section frontend/editor styling
+
 ### Documentation
 
 - Replaced starter notes with project-specific documentation in `README.txt`

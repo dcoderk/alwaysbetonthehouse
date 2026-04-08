@@ -1,0 +1,46 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "property-listings/host-section",
+	"title": "Host Section",
+	"category": "widgets",
+	"icon": "id-alt",
+	"description": "Editable host or agent introduction section.",
+	"textdomain": "property-listings",
+	"keywords": ["host", "agent", "about", "bio"],
+	"editorScript": "property-listings-host-section-editor",
+	"render": "file:./render.php",
+	"attributes": {
+		"showTitle": {
+			"type": "boolean",
+			"default": true
+		},
+		"title": {
+			"type": "string",
+			"default": "Always Bet On The House"
+		},
+		"eyebrow": {
+			"type": "string",
+			"default": "Hosted by"
+		},
+		"name": {
+			"type": "string",
+			"default": "Chrishena Stanley"
+		},
+		"description": {
+			"type": "string",
+			"default": "Join Chrishena Stanley as she takes you inside luxury properties, showcases standout agents, and explores what makes each featured home worth the spotlight. This layout keeps the host introduction elegant while pushing visitors directly to external episode links."
+		},
+		"imageUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"imageAlt": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false
+	}
+}

@@ -24,13 +24,14 @@ function property_listings_setup() {
 add_action( 'after_setup_theme', 'property_listings_setup' );
 
 function property_listings_register_blocks() {
-	$block_editor_js_path = get_theme_file_path( '/blocks/hero-slider/editor.js' );
+	$hero_slider_editor_js_path  = get_theme_file_path( '/blocks/hero-slider/editor.js' );
+	$host_section_editor_js_path = get_theme_file_path( '/blocks/host-section/editor.js' );
 
 	wp_register_script(
 		'property-listings-hero-slider-editor',
 		get_theme_file_uri( '/blocks/hero-slider/editor.js' ),
 		array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-element', 'wp-i18n' ),
-		file_exists( $block_editor_js_path ) ? filemtime( $block_editor_js_path ) : null,
+		file_exists( $hero_slider_editor_js_path ) ? filemtime( $hero_slider_editor_js_path ) : null,
 		true
 	);
 
@@ -42,7 +43,16 @@ function property_listings_register_blocks() {
 		)
 	);
 
+	wp_register_script(
+		'property-listings-host-section-editor',
+		get_theme_file_uri( '/blocks/host-section/editor.js' ),
+		array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-element', 'wp-i18n' ),
+		file_exists( $host_section_editor_js_path ) ? filemtime( $host_section_editor_js_path ) : null,
+		true
+	);
+
 	register_block_type( get_theme_file_path( '/blocks/hero-slider' ) );
+	register_block_type( get_theme_file_path( '/blocks/host-section' ) );
 }
 add_action( 'init', 'property_listings_register_blocks' );
 
