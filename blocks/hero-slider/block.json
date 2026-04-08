@@ -1,0 +1,59 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "property-listings/hero-slider",
+	"title": "Hero Slider",
+	"category": "widgets",
+	"icon": "images-alt2",
+	"description": "Editable homepage hero slider with Media Library images.",
+	"textdomain": "property-listings",
+	"keywords": ["hero", "slider", "homepage", "carousel"],
+	"editorScript": "property-listings-hero-slider-editor",
+	"render": "file:./render.php",
+	"attributes": {
+		"kicker": {
+			"type": "string",
+			"default": "Luxury Real Estate Podcast"
+		},
+		"heading": {
+			"type": "string",
+			"default": "Always Bet On The House"
+		},
+		"subtitle": {
+			"type": "string",
+			"default": "Showcasing standout homes, the agents behind them, and the stories that make each listing worth the spotlight."
+		},
+		"showText": {
+			"type": "boolean",
+			"default": true
+		},
+		"logoUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"logoAlt": {
+			"type": "string",
+			"default": ""
+		},
+		"slides": {
+			"type": "array",
+			"default": [
+				{
+					"imageUrl": "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1800&q=80",
+					"imageAlt": "Modern luxury estate exterior at dusk"
+				},
+				{
+					"imageUrl": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1800&q=80",
+					"imageAlt": "Luxury home with dramatic interior and pool lighting"
+				},
+				{
+					"imageUrl": "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1800&q=80",
+					"imageAlt": "Contemporary luxury residence with expansive windows"
+				}
+			]
+		}
+	},
+	"supports": {
+		"html": false
+	}
+}

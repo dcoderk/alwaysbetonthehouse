@@ -122,4 +122,90 @@ document.addEventListener("DOMContentLoaded", function () {
 
 		mobileMenuContent.insertBefore(extras, mobileNavContainer);
 	}
+
+	const initHeroSlider = function (sliderRoot) {
+		const slides = Array.from(sliderRoot.querySelectorAll(".hero-slide"));
+		const thumbs = Array.from(sliderRoot.querySelectorAll(".hero-thumb"));
+		const prevBtn = sliderRoot.querySelector(".hero-arrow-prev");
+		const nextBtn = sliderRoot.querySelector(".hero-arrow-next");
+		const heroCarousel = sliderRoot.querySelector(".hero-carousel-full");
+		let activeIndex = 0;
+		let autoRotate;
+
+		const showSlide = function (index) {
+			if (!slides.length) {
+				return;
+			}
+
+			activeIndex = (index + slides.length) % slides.length;
+
+			slides.forEach(function (slide, slideIndex) {
+				slide.classList.toggle("is-active", slideIndex === activeIndex);
+			});
+
+			thumbs.forEach(function (thumb, thumbIndex) {
+				thumb.classList.toggle("is-active", thumbIndex === activeIndex);
+			});
+		};
+
+		const stopRotation = function () {
+			if (autoRotate) {
+				window.clearInterval(autoRotate);
+			}
+		};
+
+		const startRotation = function () {
+			if (slides.length < 2) {
+				return;
+			}
+
+			stopRotation();
+			autoRotate = window.setInterval(function () {
+				showSlide(activeIndex + 1);
+			}, 5000);
+		};
+
+		if (slides.length) {
+			thumbs.forEach(function (thumb, index) {
+				thumb.addEventListener("click", function () {
+					showSlide(index);
+					startRotation();
+				});
+			});
+
+			showSlide(0);
+			startRotation();
+		}
+
+		if (prevBtn) {
+			prevBtn.addEventListener("click", function () {
+				showSlide(activeIndex - 1);
+				startRotation();
+			});
+		}
+
+		if (nextBtn) {
+			nextBtn.addEventListener("click", function () {
+				showSlide(activeIndex + 1);
+				startRotation();
+			});
+		}
+
+		if (heroCarousel) {
+			heroCarousel.addEventListener("mouseenter", stopRotation);
+			heroCarousel.addEventListener("mouseleave", startRotation);
+		}
+	};
+
+	document.querySelectorAll(".hero-slider-block").forEach(function (sliderRoot) {
+		initHeroSlider(sliderRoot);
+	});
+
+	if (document.querySelector(".hero") && !document.querySelector(".hero-slider-block")) {
+		const fallbackSliderRoot = document.querySelector(".hero");
+
+		if (fallbackSliderRoot) {
+			initHeroSlider(fallbackSliderRoot);
+		}
+	}
 });
