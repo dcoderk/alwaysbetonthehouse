@@ -24,7 +24,8 @@ function property_listings_setup() {
 add_action( 'after_setup_theme', 'property_listings_setup' );
 
 function property_listings_enqueue_assets() {
-	$theme = wp_get_theme();
+	$main_css_path = get_theme_file_path( '/assets/css/main.css' );
+	$main_js_path  = get_theme_file_path( '/assets/js/main.js' );
 
 	wp_enqueue_style(
 		'property-listings-fonts',
@@ -37,14 +38,14 @@ function property_listings_enqueue_assets() {
 		'property-listings-main',
 		get_theme_file_uri( '/assets/css/main.css' ),
 		array( 'property-listings-fonts' ),
-		$theme->get( 'Version' )
+		file_exists( $main_css_path ) ? filemtime( $main_css_path ) : null
 	);
 
 	wp_enqueue_script(
 		'property-listings-main',
 		get_theme_file_uri( '/assets/js/main.js' ),
 		array(),
-		$theme->get( 'Version' ),
+		file_exists( $main_js_path ) ? filemtime( $main_js_path ) : null,
 		true
 	);
 }
