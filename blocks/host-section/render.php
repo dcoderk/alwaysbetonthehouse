@@ -28,11 +28,11 @@ $wrapper_attributes = get_block_wrapper_attributes(
 );
 ?>
 <section <?php echo $wrapper_attributes; ?>>
-	<div class="host-shell">
+	<div class="host-shell" itemscope itemtype="https://schema.org/Person">
 		<div class="host-layout">
 			<div class="host-photo-wrap">
 				<?php if ( ! empty( $attributes['imageUrl'] ) ) : ?>
-					<img src="<?php echo esc_url( $attributes['imageUrl'] ); ?>" alt="<?php echo esc_attr( $attributes['imageAlt'] ); ?>" class="host-photo" />
+					<img src="<?php echo esc_url( $attributes['imageUrl'] ); ?>" alt="<?php echo esc_attr( $attributes['imageAlt'] ); ?>" class="host-photo" itemprop="image" />
 				<?php else : ?>
 					<div class="host-photo host-photo-placeholder" aria-hidden="true"></div>
 				<?php endif; ?>
@@ -48,11 +48,11 @@ $wrapper_attributes = get_block_wrapper_attributes(
 				<?php endif; ?>
 
 				<?php if ( ! empty( $attributes['name'] ) ) : ?>
-					<h2><?php echo esc_html( $attributes['name'] ); ?></h2>
+					<h2 itemprop="name"><?php echo esc_html( $attributes['name'] ); ?></h2>
 				<?php endif; ?>
 
 				<?php if ( ! empty( $attributes['description'] ) ) : ?>
-					<p><?php echo esc_html( $attributes['description'] ); ?></p>
+					<p itemprop="description"><?php echo esc_html( $attributes['description'] ); ?></p>
 				<?php endif; ?>
 			</div>
 		</div>

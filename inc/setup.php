@@ -12,6 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 function property_listings_setup() {
 	load_theme_textdomain( 'property-listings', get_template_directory() . '/languages' );
 
+	add_theme_support( 'title-tag' );
+
 	add_editor_style( 'assets/css/editor.css' );
 
 	register_block_pattern_category(
@@ -22,6 +24,25 @@ function property_listings_setup() {
 	);
 }
 add_action( 'after_setup_theme', 'property_listings_setup' );
+
+function property_listings_get_header_title() {
+	return 'ALWAYS BET ON THE HOUSE';
+}
+
+function property_listings_render_header_title() {
+	$title = property_listings_get_header_title();
+
+	if ( empty( $title ) ) {
+		return '';
+	}
+
+	return sprintf(
+		'<p class="site-title"><a href="%1$s" rel="home">%2$s</a></p>',
+		esc_url( home_url( '/' ) ),
+		esc_html( $title )
+	);
+}
+add_shortcode( 'property_listings_header_title', 'property_listings_render_header_title' );
 
 function property_listings_register_blocks() {
 	$hero_slider_editor_js_path  = get_theme_file_path( '/blocks/hero-slider/editor.js' );
