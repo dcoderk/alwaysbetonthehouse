@@ -44,6 +44,342 @@ function property_listings_render_header_title() {
 }
 add_shortcode( 'property_listings_header_title', 'property_listings_render_header_title' );
 
+function property_listings_get_agent_meta( $field_name, $post_id ) {
+	if ( function_exists( 'get_field' ) ) {
+		return get_field( $field_name, $post_id );
+	}
+
+	return get_post_meta( $post_id, $field_name, true );
+}
+
+function property_listings_render_agent_profile_shortcode() {
+	if ( ! is_singular( 'agent' ) ) {
+		return '';
+	}
+
+	$post_id = get_queried_object_id();
+
+	if ( ! $post_id ) {
+		return '';
+	}
+
+	$agent_name     = get_the_title( $post_id );
+	$agent_bio      = property_listings_get_agent_meta( 'short_bio', $post_id );
+	$agent_content  = get_post_field( 'post_content', $post_id );
+	$occupation     = property_listings_get_agent_meta( 'occupation', $post_id );
+	$company        = property_listings_get_agent_meta( 'company', $post_id );
+	$phone          = property_listings_get_agent_meta( 'phone', $post_id );
+	$email          = property_listings_get_agent_meta( 'email', $post_id );
+	$website        = property_listings_get_agent_meta( 'website', $post_id );
+	$instagram      = property_listings_get_agent_meta( 'instagram', $post_id );
+	$linkedin       = property_listings_get_agent_meta( 'linkedin', $post_id );
+	$latest_videos  = property_listings_get_agent_meta( 'latest_videos', $post_id );
+	$permalink      = get_permalink( $post_id );
+	$featured_image = get_the_post_thumbnail(
+		$post_id,
+		'large',
+		array(
+			'class' => 'host-photo',
+			'alt'   => $agent_name,
+		)
+	);
+
+	if ( empty( $agent_bio ) && ! empty( $agent_content ) ) {
+		$agent_bio = wp_trim_words( wp_strip_all_tags( $agent_content ), 55 );
+	}
+
+	$contact_items = array_filter(
+		array(
+			$occupation ? '<p><span>Title:</span> ' . esc_html( $occupation ) . '</p>' : '',
+			$company ? '<p><span>Company:</span> ' . esc_html( $company ) . '</p>' : '',
+			$phone ? '<p><span>Phone:</span> <a href="' . esc_url( 'tel:' . preg_replace( '/[^0-9+]/', '', $phone ) ) . '">' . esc_html( $phone ) . '</a></p>' : '',
+			$email ? '<p><span>Email:</span> <a href="' . esc_url( 'mailto:' . antispambot( $email ) ) . '">' . esc_html( antispambot( $email ) ) . '</a></p>' : '',
+		)
+	);
+
+	$facebook_share = 'https://www.facebook.com/sharer/sharer.php?u=' . rawurlencode( $permalink );
+	$x_share        = 'https://twitter.com/intent/tweet?url=' . rawurlencode( $permalink ) . '&text=' . rawurlencode( $agent_name );
+	$linkedin_share = ! empty( $linkedin ) ? $linkedin : 'https://www.linkedin.com/sharing/share-offsite/?url=' . rawurlencode( $permalink );
+	$instagram_url  = ! empty( $instagram ) ? $instagram : '#';
+
+	if ( ! is_array( $latest_videos ) ) {
+		$latest_videos = array();
+	}
+
+	ob_start();
+	?>
+	<section class="breadcrumbs-wrap section-dark" aria-label="Breadcrumb">
+		<div class="container">
+			<nav class="breadcrumbs">
+				<a href="<?php echo esc_url( home_url( '/' ) ); ?>">Home</a>
+				<span aria-hidden="true">/</span>
+				<span aria-current="page"><?php echo esc_html( $agent_name ); ?></span>
+			</nav>
+		</div>
+	</section>
+
+	<section class="agent-hero section-dark" id="about-agent">
+		<div class="container">
+			<div class="agent-profile-card" itemscope itemtype="https://schema.org/RealEstateAgent">
+				<div class="host-layout">
+					<div class="host-photo-wrap">
+						<?php if ( ! empty( $featured_image ) ) : ?>
+							<div itemprop="image">
+								<?php echo $featured_image; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+							</div>
+						<?php else : ?>
+							<div class="host-photo host-photo-placeholder" aria-hidden="true"></div>
+						<?php endif; ?>
+					</div>
+
+					<div class="agent-info-grid">
+						<div class="agent-about">
+							<p class="eyebrow">About</p>
+							<h1 itemprop="name"><?php echo esc_html( $agent_name ); ?></h1>
+
+							<?php if ( ! empty( $agent_bio ) ) : ?>
+								<p itemprop="description"><?php echo esc_html( $agent_bio ); ?></p>
+							<?php endif; ?>
+
+							<?php if ( ! empty( $agent_content ) ) : ?>
+								<div class="agent-content" itemprop="description">
+									<?php echo wp_kses_post( wpautop( $agent_content ) ); ?>
+								</div>
+							<?php endif; ?>
+
+							<?php if ( ! empty( $contact_items ) ) : ?>
+								<hr class="section-divider" />
+								<p class="eyebrow">Contact</p>
+								<div class="agent-contact">
+									<?php if ( ! empty( $occupation ) ) : ?>
+										<p><span>Title:</span> <span itemprop="jobTitle"><?php echo esc_html( $occupation ); ?></span></p>
+									<?php endif; ?>
+									<?php if ( ! empty( $company ) ) : ?>
+										<p><span>Company:</span> <span itemprop="worksFor" itemscope itemtype="https://schema.org/Organization"><span itemprop="name"><?php echo esc_html( $company ); ?></span></span></p>
+									<?php endif; ?>
+									<?php if ( ! empty( $phone ) ) : ?>
+										<p><span>Phone:</span> <a itemprop="telephone" href="<?php echo esc_url( 'tel:' . preg_replace( '/[^0-9+]/', '', $phone ) ); ?>"><?php echo esc_html( $phone ); ?></a></p>
+									<?php endif; ?>
+									<?php if ( ! empty( $email ) ) : ?>
+										<p><span>Email:</span> <a itemprop="email" href="<?php echo esc_url( 'mailto:' . antispambot( $email ) ); ?>"><?php echo esc_html( antispambot( $email ) ); ?></a></p>
+									<?php endif; ?>
+								</div>
+							<?php endif; ?>
+
+							<hr class="section-divider" />
+							<p class="share-label">Share This</p>
+							<div class="agent-share">
+								<a class="agent-share__icon" href="<?php echo esc_url( $facebook_share ); ?>" target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook"><i class="bi bi-facebook" aria-hidden="true"></i></a>
+								<a class="agent-share__icon<?php echo '#' === $instagram_url ? ' is-disabled' : ''; ?>" href="<?php echo esc_url( $instagram_url ); ?>"<?php echo '#' === $instagram_url ? ' aria-disabled="true"' : ' target="_blank" rel="noopener noreferrer" itemprop="sameAs"'; ?> aria-label="Share on Instagram"><i class="bi bi-instagram" aria-hidden="true"></i></a>
+								<a class="agent-share__icon" href="<?php echo esc_url( $x_share ); ?>" target="_blank" rel="noopener noreferrer" aria-label="Share on X"><i class="bi bi-twitter-x" aria-hidden="true"></i></a>
+								<a class="agent-share__icon" href="<?php echo esc_url( $linkedin_share ); ?>" target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn"<?php echo ! empty( $linkedin ) ? ' itemprop="sameAs"' : ''; ?>><i class="bi bi-linkedin" aria-hidden="true"></i></a>
+							</div>
+							<meta itemprop="url" content="<?php echo esc_url( $permalink ); ?>" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section id="listings" class="listing-section section-light">
+		<div class="container">
+			<div class="listing-heading">
+				<p class="eyebrow">Latest Episodes</p>
+				<h2>Latest <?php echo esc_html( $agent_name ); ?> Features</h2>
+				<p>Episodes or scenes connected to this agent can be highlighted here.</p>
+			</div>
+
+			<?php if ( ! empty( $latest_videos ) ) : ?>
+				<div class="agent-listing-grid">
+					<?php foreach ( $latest_videos as $related_post ) : ?>
+						<?php
+						$related_post = get_post( $related_post );
+
+						if ( ! $related_post instanceof WP_Post ) {
+							continue;
+						}
+
+						$related_title   = get_the_title( $related_post );
+						$related_link    = get_permalink( $related_post );
+						$related_excerpt = get_the_excerpt( $related_post );
+						$related_thumb   = get_the_post_thumbnail( $related_post, 'medium_large', array( 'alt' => $related_title ) );
+						?>
+						<article class="agent-listing-card">
+							<a href="<?php echo esc_url( $related_link ); ?>" class="agent-listing-thumb">
+								<?php if ( ! empty( $related_thumb ) ) : ?>
+									<?php echo $related_thumb; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								<?php else : ?>
+									<div class="agent-listing-thumb agent-listing-thumb--placeholder" aria-hidden="true"></div>
+								<?php endif; ?>
+							</a>
+							<div class="agent-listing">
+								<h3><a href="<?php echo esc_url( $related_link ); ?>"><?php echo esc_html( $related_title ); ?></a></h3>
+								<?php if ( ! empty( $related_excerpt ) ) : ?>
+									<p><?php echo esc_html( $related_excerpt ); ?></p>
+								<?php endif; ?>
+							</div>
+						</article>
+					<?php endforeach; ?>
+				</div>
+			<?php else : ?>
+				<div class="agent-empty-state">
+					<p>Assign scenes or episodes in the agent profile to populate this section.</p>
+				</div>
+			<?php endif; ?>
+		</div>
+	</section>
+	<?php
+
+	return ob_get_clean();
+}
+add_shortcode( 'property_listings_agent_profile', 'property_listings_render_agent_profile_shortcode' );
+
+function property_listings_get_seo_post_id() {
+	if ( is_singular() ) {
+		return get_queried_object_id();
+	}
+
+	if ( is_posts_page() ) {
+		return (int) get_option( 'page_for_posts' );
+	}
+
+	return 0;
+}
+
+function property_listings_get_seo_field_value( $field_name, $post_id = 0 ) {
+	if ( ! $post_id ) {
+		$post_id = property_listings_get_seo_post_id();
+	}
+
+	if ( ! $post_id ) {
+		return '';
+	}
+
+	if ( function_exists( 'get_field' ) ) {
+		$value = get_field( $field_name, $post_id );
+	} else {
+		$value = get_post_meta( $post_id, $field_name, true );
+	}
+
+	if ( is_string( $value ) ) {
+		return trim( wp_strip_all_tags( $value ) );
+	}
+
+	return '';
+}
+
+function property_listings_filter_document_title( $title ) {
+	$seo_title = property_listings_get_seo_field_value( 'page_title' );
+
+	if ( ! empty( $seo_title ) ) {
+		return $seo_title;
+	}
+
+	return $title;
+}
+add_filter( 'pre_get_document_title', 'property_listings_filter_document_title' );
+
+function property_listings_output_seo_meta_tags() {
+	$post_id = property_listings_get_seo_post_id();
+
+	if ( ! $post_id ) {
+		return;
+	}
+
+	$meta_description = property_listings_get_seo_field_value( 'meta_description', $post_id );
+	$meta_keywords    = property_listings_get_seo_field_value( 'meta_keywords', $post_id );
+
+	if ( ! empty( $meta_description ) ) {
+		echo '<meta name="description" content="' . esc_attr( $meta_description ) . '" />' . "\n";
+	}
+
+	if ( ! empty( $meta_keywords ) ) {
+		echo '<meta name="keywords" content="' . esc_attr( $meta_keywords ) . '" />' . "\n";
+	}
+}
+add_action( 'wp_head', 'property_listings_output_seo_meta_tags', 1 );
+
+function property_listings_output_agent_schema() {
+	if ( ! is_singular( 'agent' ) ) {
+		return;
+	}
+
+	$post_id = get_queried_object_id();
+
+	if ( ! $post_id ) {
+		return;
+	}
+
+	$name        = get_the_title( $post_id );
+	$description = property_listings_get_agent_meta( 'short_bio', $post_id );
+	$content     = get_post_field( 'post_content', $post_id );
+	$email       = property_listings_get_agent_meta( 'email', $post_id );
+	$phone       = property_listings_get_agent_meta( 'phone', $post_id );
+	$website     = property_listings_get_agent_meta( 'website', $post_id );
+	$instagram   = property_listings_get_agent_meta( 'instagram', $post_id );
+	$linkedin    = property_listings_get_agent_meta( 'linkedin', $post_id );
+	$occupation  = property_listings_get_agent_meta( 'occupation', $post_id );
+	$company     = property_listings_get_agent_meta( 'company', $post_id );
+	$image_url   = get_the_post_thumbnail_url( $post_id, 'full' );
+	$permalink   = get_permalink( $post_id );
+
+	if ( empty( $description ) && ! empty( $content ) ) {
+		$description = wp_trim_words( wp_strip_all_tags( $content ), 55 );
+	}
+
+	$schema = array(
+		'@context'         => 'https://schema.org',
+		'@type'            => 'RealEstateAgent',
+		'@id'              => trailingslashit( $permalink ) . '#agent',
+		'url'              => $permalink,
+		'mainEntityOfPage' => $permalink,
+		'name'             => $name,
+	);
+
+	if ( ! empty( $description ) ) {
+		$schema['description'] = $description;
+	}
+
+	if ( ! empty( $image_url ) ) {
+		$schema['image'] = $image_url;
+	}
+
+	if ( ! empty( $email ) ) {
+		$schema['email'] = $email;
+	}
+
+	if ( ! empty( $phone ) ) {
+		$schema['telephone'] = $phone;
+	}
+
+	if ( ! empty( $occupation ) ) {
+		$schema['jobTitle'] = $occupation;
+	}
+
+	if ( ! empty( $website ) ) {
+		$schema['sameAs'][] = esc_url_raw( $website );
+	}
+
+	if ( ! empty( $instagram ) ) {
+		$schema['sameAs'][] = esc_url_raw( $instagram );
+	}
+
+	if ( ! empty( $linkedin ) ) {
+		$schema['sameAs'][] = esc_url_raw( $linkedin );
+	}
+
+	if ( ! empty( $company ) ) {
+		$schema['worksFor'] = array(
+			'@type' => 'Organization',
+			'name'  => $company,
+		);
+	}
+
+	echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
+}
+add_action( 'wp_head', 'property_listings_output_agent_schema', 5 );
+
 function property_listings_register_blocks() {
 	$hero_slider_editor_js_path  = get_theme_file_path( '/blocks/hero-slider/editor.js' );
 	$host_section_editor_js_path = get_theme_file_path( '/blocks/host-section/editor.js' );
@@ -89,9 +425,16 @@ function property_listings_enqueue_assets() {
 	);
 
 	wp_enqueue_style(
+		'property-listings-bootstrap-icons',
+		'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
+		array(),
+		'1.11.3'
+	);
+
+	wp_enqueue_style(
 		'property-listings-main',
 		get_theme_file_uri( '/assets/css/main.css' ),
-		array( 'property-listings-fonts' ),
+		array( 'property-listings-fonts', 'property-listings-bootstrap-icons' ),
 		file_exists( $main_css_path ) ? filemtime( $main_css_path ) : null
 	);
 
@@ -107,6 +450,23 @@ add_action( 'wp_enqueue_scripts', 'property_listings_enqueue_assets' );
 
 function property_listings_enqueue_editor_assets() {
 	$main_css_path = get_theme_file_path( '/assets/css/main.css' );
+	$screen        = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+	$screen_base   = $screen && ! empty( $screen->base ) ? $screen->base : '';
+	$post_type     = $screen && ! empty( $screen->post_type ) ? $screen->post_type : '';
+
+	$load_frontend_editor_styles = in_array(
+		$screen_base,
+		array( 'site-editor', 'appearance_page_gutenberg-edit-site' ),
+		true
+	) || in_array(
+		$post_type,
+		array( 'page', 'wp_template', 'wp_template_part' ),
+		true
+	);
+
+	if ( ! $load_frontend_editor_styles ) {
+		return;
+	}
 
 	wp_enqueue_style(
 		'property-listings-editor-main',
