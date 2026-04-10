@@ -1016,9 +1016,16 @@ a.wp-block-social-link-anchor:focus-visible::after {
 	line-height: 1.7;
 }
 
-.agent-contact span {
+.agent-contact__label {
 	color: var(--gold-2);
 	font-weight: 700;
+}
+
+.agent-contact__value,
+.agent-contact__value *,
+.agent-contact__value span {
+	color: #f2e7d4;
+	font-weight: 500;
 }
 
 .agent-contact a,
@@ -1091,7 +1098,7 @@ a.wp-block-social-link-anchor:focus-visible::after {
 .listing-heading h2 {
 	margin: 8px 0 12px;
 	color: var(--text-dark);
-	font-size: clamp(2.3rem, 4vw, 3.3rem);
+	font-size: clamp(2.3rem, 4vw,  2.5rem);
 	line-height: 0.98;
 }
 
@@ -1102,15 +1109,15 @@ a.wp-block-social-link-anchor:focus-visible::after {
 
 .agent-listing-grid {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 24px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 20px;
 }
 
 .agent-listing-card {
 	overflow: hidden;
-	border-radius: 28px;
+	border-radius: 22px;
 	background: #fff;
-	box-shadow: 0 22px 48px rgba(31, 28, 25, 0.12);
+	box-shadow: 0 16px 34px rgba(31, 28, 25, 0.1);
 }
 
 .agent-listing-thumb {
@@ -1122,7 +1129,7 @@ a.wp-block-social-link-anchor:focus-visible::after {
 .agent-listing-thumb--placeholder {
 	display: block;
 	width: 100%;
-	aspect-ratio: 16 / 10;
+	height: 190px;
 	object-fit: cover;
 }
 
@@ -1131,19 +1138,21 @@ a.wp-block-social-link-anchor:focus-visible::after {
 }
 
 .agent-listing {
-	padding: 20px 22px 24px;
+	padding: 16px 16px 18px;
 }
 
 .agent-listing h3 {
 	margin: 0 0 10px;
 	color: var(--text-dark);
-	font-size: 1.5rem;
+	font-size: 1.25rem;
+	line-height: 1.05;
 }
 
 .agent-listing p {
 	margin: 0;
 	color: var(--muted-dark);
-	line-height: 1.6;
+	font-size: 0.95rem;
+	line-height: 1.45;
 }
 
 .agent-empty-state {
@@ -1157,6 +1166,17 @@ a.wp-block-social-link-anchor:focus-visible::after {
 .agent-empty-state p {
 	margin: 0;
 	color: var(--muted-dark);
+}
+
+@media (max-width: 1180px) {
+	.agent-listing-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.agent-listing-thumb img,
+	.agent-listing-thumb--placeholder {
+		height: 240px;
+	}
 }
 
 @media (max-width: 860px) {
@@ -1175,6 +1195,11 @@ a.wp-block-social-link-anchor:focus-visible::after {
 
 	.agent-listing-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.agent-listing-thumb img,
+	.agent-listing-thumb--placeholder {
+		height: 280px;
 	}
 
 	.listing-section {

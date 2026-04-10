@@ -52,6 +52,108 @@ function property_listings_get_agent_meta( $field_name, $post_id ) {
 	return get_post_meta( $post_id, $field_name, true );
 }
 
+function property_listings_get_related_item_location( $post_id ) {
+	$location_fields = array(
+		'address',
+		'property_address',
+		'location',
+		'listing_address',
+	);
+
+	foreach ( $location_fields as $field_name ) {
+		$value = property_listings_get_agent_meta( $field_name, $post_id );
+
+		if ( is_string( $value ) && '' !== trim( $value ) ) {
+			return trim( wp_strip_all_tags( $value ) );
+		}
+	}
+
+	$excerpt = get_post_field( 'post_excerpt', $post_id );
+
+	if ( is_string( $excerpt ) && '' !== trim( $excerpt ) ) {
+		return trim( wp_strip_all_tags( $excerpt ) );
+	}
+
+	return '';
+}
+
+function property_listings_render_agent_listing_card( $post ) {
+	$post = get_post( $post );
+
+	if ( ! $post instanceof WP_Post ) {
+		return '';
+	}
+
+	$related_title      = get_the_title( $post );
+	$related_link       = get_permalink( $post );
+	$related_location   = property_listings_get_related_item_location( $post->ID );
+	$related_thumb      = get_the_post_thumbnail( $post, 'medium_large', array( 'alt' => $related_title ) );
+	$open_in_new_window = false;
+
+	if ( 'scene' === $post->post_type ) {
+		$video_link        = property_listings_get_agent_meta( 'video_link', $post->ID );
+		$video_screenshot  = property_listings_get_agent_meta( 'video_screenshot', $post->ID );
+		$open_in_new_window = (bool) property_listings_get_agent_meta( 'open_in_new_window', $post->ID );
+
+		if ( ! empty( $video_link ) ) {
+			$related_link = $video_link;
+		}
+
+		if ( is_array( $video_screenshot ) && ! empty( $video_screenshot['ID'] ) ) {
+			$video_screenshot = (int) $video_screenshot['ID'];
+		}
+
+		if ( is_numeric( $video_screenshot ) && ! empty( $video_screenshot ) ) {
+			$related_thumb = wp_get_attachment_image(
+				(int) $video_screenshot,
+				'medium_large',
+				false,
+				array(
+					'alt' => $related_title,
+				)
+			);
+		} elseif ( is_array( $video_screenshot ) && ! empty( $video_screenshot['url'] ) ) {
+			$related_thumb = sprintf(
+				'<img src="%1$s" alt="%2$s" />',
+				esc_url( $video_screenshot['url'] ),
+				esc_attr( $related_title )
+			);
+		} elseif ( is_string( $video_screenshot ) && '' !== trim( $video_screenshot ) ) {
+			$related_thumb = sprintf(
+				'<img src="%1$s" alt="%2$s" />',
+				esc_url( $video_screenshot ),
+				esc_attr( $related_title )
+			);
+		}
+	}
+
+	$link_target = $open_in_new_window ? ' target="_blank" rel="noopener noreferrer"' : '';
+
+	$thumb_markup = ! empty( $related_thumb ) ? $related_thumb : '<div class="agent-listing-thumb agent-listing-thumb--placeholder" aria-hidden="true"></div>';
+	$location_markup = ! empty( $related_location ) ? '<p>' . esc_html( $related_location ) . '</p>' : '';
+
+	return '<article class="agent-listing-card"><a href="' . esc_url( $related_link ) . '" class="agent-listing-thumb"' . $link_target . '>' . $thumb_markup . '</a><div class="agent-listing"><h3><a href="' . esc_url( $related_link ) . '"' . $link_target . '>' . esc_html( $related_title ) . '</a></h3>' . $location_markup . '</div></article>';
+}
+
+function property_listings_get_agent_scenes( $agent_id ) {
+	$related_query = new WP_Query(
+		array(
+			'post_type'      => 'scene',
+			'post_status'    => 'publish',
+			'posts_per_page' => 4,
+			'meta_query'     => array(
+				array(
+					'key'     => 'agent_on_video',
+					'value'   => '"' . (int) $agent_id . '"',
+					'compare' => 'LIKE',
+				),
+			),
+		)
+	);
+
+	return $related_query->posts;
+}
+
 function property_listings_render_agent_profile_shortcode() {
 	if ( ! is_singular( 'agent' ) ) {
 		return '';
@@ -74,7 +176,9 @@ function property_listings_render_agent_profile_shortcode() {
 	$instagram      = property_listings_get_agent_meta( 'instagram', $post_id );
 	$linkedin       = property_listings_get_agent_meta( 'linkedin', $post_id );
 	$latest_videos  = property_listings_get_agent_meta( 'latest_videos', $post_id );
+	$latest_intro   = property_listings_get_agent_meta( 'latest_section_intro', $post_id );
 	$permalink      = get_permalink( $post_id );
+	$related_scenes = property_listings_get_agent_scenes( $post_id );
 	$featured_image = get_the_post_thumbnail(
 		$post_id,
 		'large',
@@ -88,11 +192,15 @@ function property_listings_render_agent_profile_shortcode() {
 		$agent_bio = wp_trim_words( wp_strip_all_tags( $agent_content ), 55 );
 	}
 
+	if ( empty( $latest_intro ) ) {
+		$latest_intro = 'Episodes or scenes connected to this agent can be highlighted here.';
+	}
+
 	$contact_items = array_filter(
 		array(
 			$occupation ? '<p><span>Title:</span> ' . esc_html( $occupation ) . '</p>' : '',
 			$company ? '<p><span>Company:</span> ' . esc_html( $company ) . '</p>' : '',
-			$phone ? '<p><span>Phone:</span> <a href="' . esc_url( 'tel:' . preg_replace( '/[^0-9+]/', '', $phone ) ) . '">' . esc_html( $phone ) . '</a></p>' : '',
+			$phone ? '<p><span>Phone:</span> ' . esc_url( 'tel:' . preg_replace( '/[^0-9+]/', '', $phone ) ) . esc_html( $phone ) . '</p>' : '',
 			$email ? '<p><span>Email:</span> <a href="' . esc_url( 'mailto:' . antispambot( $email ) ) . '">' . esc_html( antispambot( $email ) ) . '</a></p>' : '',
 		)
 	);
@@ -152,16 +260,16 @@ function property_listings_render_agent_profile_shortcode() {
 								<p class="eyebrow">Contact</p>
 								<div class="agent-contact">
 									<?php if ( ! empty( $occupation ) ) : ?>
-										<p><span>Title:</span> <span itemprop="jobTitle"><?php echo esc_html( $occupation ); ?></span></p>
+										<p><span class="agent-contact__label">Title:</span> <span class="agent-contact__value" itemprop="jobTitle"><?php echo esc_html( $occupation ); ?></span></p>
 									<?php endif; ?>
 									<?php if ( ! empty( $company ) ) : ?>
-										<p><span>Company:</span> <span itemprop="worksFor" itemscope itemtype="https://schema.org/Organization"><span itemprop="name"><?php echo esc_html( $company ); ?></span></span></p>
+										<p><span class="agent-contact__label">Company:</span> <span class="agent-contact__value" itemprop="worksFor" itemscope itemtype="https://schema.org/Organization"><span itemprop="name"><?php echo esc_html( $company ); ?></span></span></p>
 									<?php endif; ?>
 									<?php if ( ! empty( $phone ) ) : ?>
-										<p><span>Phone:</span> <a itemprop="telephone" href="<?php echo esc_url( 'tel:' . preg_replace( '/[^0-9+]/', '', $phone ) ); ?>"><?php echo esc_html( $phone ); ?></a></p>
+										<p><span class="agent-contact__label">Phone:</span> <span class="agent-contact__value" itemprop="telephone"><?php echo esc_html( $phone ); ?></span></p>
 									<?php endif; ?>
 									<?php if ( ! empty( $email ) ) : ?>
-										<p><span>Email:</span> <a itemprop="email" href="<?php echo esc_url( 'mailto:' . antispambot( $email ) ); ?>"><?php echo esc_html( antispambot( $email ) ); ?></a></p>
+										<p><span class="agent-contact__label">Email:</span> <span class="agent-contact__value" itemprop="email"><?php echo esc_html( antispambot( $email ) ); ?></span></p>
 									<?php endif; ?>
 								</div>
 							<?php endif; ?>
@@ -186,45 +294,19 @@ function property_listings_render_agent_profile_shortcode() {
 		<div class="container">
 			<div class="listing-heading">
 				<p class="eyebrow">Latest Episodes</p>
-				<h2>Latest <?php echo esc_html( $agent_name ); ?> Features</h2>
-				<p>Episodes or scenes connected to this agent can be highlighted here.</p>
+				<h2>Latest <?php echo esc_html( $agent_name ); ?> Real Estate Listing</h2>
+				<p><?php echo esc_html( $latest_intro ); ?></p>
 			</div>
 
-			<?php if ( ! empty( $latest_videos ) ) : ?>
+			<?php if ( ! empty( $related_scenes ) ) : ?>
 				<div class="agent-listing-grid">
-					<?php foreach ( $latest_videos as $related_post ) : ?>
-						<?php
-						$related_post = get_post( $related_post );
-
-						if ( ! $related_post instanceof WP_Post ) {
-							continue;
-						}
-
-						$related_title   = get_the_title( $related_post );
-						$related_link    = get_permalink( $related_post );
-						$related_excerpt = get_the_excerpt( $related_post );
-						$related_thumb   = get_the_post_thumbnail( $related_post, 'medium_large', array( 'alt' => $related_title ) );
-						?>
-						<article class="agent-listing-card">
-							<a href="<?php echo esc_url( $related_link ); ?>" class="agent-listing-thumb">
-								<?php if ( ! empty( $related_thumb ) ) : ?>
-									<?php echo $related_thumb; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-								<?php else : ?>
-									<div class="agent-listing-thumb agent-listing-thumb--placeholder" aria-hidden="true"></div>
-								<?php endif; ?>
-							</a>
-							<div class="agent-listing">
-								<h3><a href="<?php echo esc_url( $related_link ); ?>"><?php echo esc_html( $related_title ); ?></a></h3>
-								<?php if ( ! empty( $related_excerpt ) ) : ?>
-									<p><?php echo esc_html( $related_excerpt ); ?></p>
-								<?php endif; ?>
-							</div>
-						</article>
+					<?php foreach ( $related_scenes as $related_post ) : ?>
+						<?php echo property_listings_render_agent_listing_card( $related_post ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<?php endforeach; ?>
 				</div>
 			<?php else : ?>
 				<div class="agent-empty-state">
-					<p>Assign scenes or episodes in the agent profile to populate this section.</p>
+					<p>Assign this agent in the Scene `Agent on Video` field to populate this section.</p>
 				</div>
 			<?php endif; ?>
 		</div>
