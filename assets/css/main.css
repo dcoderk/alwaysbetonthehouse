@@ -232,6 +232,10 @@ body {
 
 
 /* Custom: Host Or Agent Intro Section */
+nav.breadcrumbs span {
+    color: #f6ebd7;
+}
+
 .eyebrow {
 	color: var(--gold-2);
 	font-size: 0.9rem;
