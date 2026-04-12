@@ -135,6 +135,448 @@ function property_listings_render_agent_listing_card( $post ) {
 	return '<article class="agent-listing-card"><a href="' . esc_url( $related_link ) . '" class="agent-listing-thumb"' . $link_target . '>' . $thumb_markup . '</a><div class="agent-listing"><h3><a href="' . esc_url( $related_link ) . '"' . $link_target . '>' . esc_html( $related_title ) . '</a></h3>' . $location_markup . '</div></article>';
 }
 
+function property_listings_get_scene_taxonomy() {
+	$taxonomies = get_object_taxonomies( 'scene', 'objects' );
+
+	if ( empty( $taxonomies ) || ! is_array( $taxonomies ) ) {
+		return null;
+	}
+
+	$preferred_taxonomies = array(
+		'scene_category',
+		'scene_categories',
+		'episode_category',
+		'category',
+	);
+
+	foreach ( $preferred_taxonomies as $taxonomy_name ) {
+		if ( isset( $taxonomies[ $taxonomy_name ] ) && ! empty( $taxonomies[ $taxonomy_name ]->public ) ) {
+			return $taxonomies[ $taxonomy_name ];
+		}
+	}
+
+	foreach ( $taxonomies as $taxonomy ) {
+		if ( empty( $taxonomy->public ) || 'post_format' === $taxonomy->name ) {
+			continue;
+		}
+
+		if ( ! empty( $taxonomy->hierarchical ) ) {
+			return $taxonomy;
+		}
+	}
+
+	foreach ( $taxonomies as $taxonomy ) {
+		if ( ! empty( $taxonomy->public ) && 'post_format' !== $taxonomy->name ) {
+			return $taxonomy;
+		}
+	}
+
+	return null;
+}
+
+function property_listings_get_scene_selected_term_slug( $taxonomy ) {
+	if ( empty( $taxonomy ) || empty( $taxonomy->name ) ) {
+		return '';
+	}
+
+	$selected_term = isset( $_GET['episode_category'] ) ? sanitize_title( wp_unslash( $_GET['episode_category'] ) ) : '';
+
+	if ( '' === $selected_term ) {
+		return '';
+	}
+
+	$term = get_term_by( 'slug', $selected_term, $taxonomy->name );
+
+	return $term instanceof WP_Term ? $term->slug : '';
+}
+
+function property_listings_filter_scene_archive_query( $query ) {
+	if ( is_admin() || ! $query->is_main_query() || ! $query->is_post_type_archive( 'scene' ) ) {
+		return;
+	}
+
+	$taxonomy      = property_listings_get_scene_taxonomy();
+	$selected_term = property_listings_get_scene_selected_term_slug( $taxonomy );
+
+	if ( empty( $taxonomy ) || '' === $selected_term ) {
+		return;
+	}
+
+	$query->set(
+		'tax_query',
+		array(
+			array(
+				'taxonomy' => $taxonomy->name,
+				'field'    => 'slug',
+				'terms'    => $selected_term,
+			),
+		)
+	);
+}
+add_action( 'pre_get_posts', 'property_listings_filter_scene_archive_query' );
+
+function property_listings_get_scene_card_link_data( $post_id ) {
+	$link_data = array(
+		'url'       => get_permalink( $post_id ),
+		'target'    => '',
+		'rel'       => '',
+		'is_remote' => false,
+	);
+
+	$video_link         = property_listings_get_agent_meta( 'video_link', $post_id );
+	$open_in_new_window = (bool) property_listings_get_agent_meta( 'open_in_new_window', $post_id );
+
+	if ( is_string( $video_link ) && '' !== trim( $video_link ) ) {
+		$link_data['url']       = trim( $video_link );
+		$link_data['is_remote'] = true;
+	}
+
+	if ( $open_in_new_window || $link_data['is_remote'] ) {
+		$link_data['target'] = ' target="_blank"';
+		$link_data['rel']    = ' rel="noopener noreferrer"';
+	}
+
+	return $link_data;
+}
+
+function property_listings_get_scene_card_thumbnail( $post_id, $title ) {
+	$video_screenshot = property_listings_get_agent_meta( 'video_screenshot', $post_id );
+
+	if ( is_array( $video_screenshot ) && ! empty( $video_screenshot['ID'] ) ) {
+		$video_screenshot = (int) $video_screenshot['ID'];
+	}
+
+	if ( is_numeric( $video_screenshot ) && ! empty( $video_screenshot ) ) {
+		return wp_get_attachment_image(
+			(int) $video_screenshot,
+			'large',
+			false,
+			array(
+				'alt' => $title,
+			)
+		);
+	}
+
+	if ( is_array( $video_screenshot ) && ! empty( $video_screenshot['url'] ) ) {
+		return sprintf(
+			'<img src="%1$s" alt="%2$s" />',
+			esc_url( $video_screenshot['url'] ),
+			esc_attr( $title )
+		);
+	}
+
+	if ( is_string( $video_screenshot ) && '' !== trim( $video_screenshot ) ) {
+		return sprintf(
+			'<img src="%1$s" alt="%2$s" />',
+			esc_url( $video_screenshot ),
+			esc_attr( $title )
+		);
+	}
+
+	if ( has_post_thumbnail( $post_id ) ) {
+		return get_the_post_thumbnail(
+			$post_id,
+			'large',
+			array(
+				'alt' => $title,
+			)
+		);
+	}
+
+	return '<div class="scene-thumb scene-thumb--placeholder" aria-hidden="true"></div>';
+}
+
+function property_listings_get_scene_card_term_label( $post_id, $taxonomy ) {
+	if ( empty( $taxonomy ) || empty( $taxonomy->name ) ) {
+		return '';
+	}
+
+	$terms = get_the_terms( $post_id, $taxonomy->name );
+
+	if ( is_wp_error( $terms ) || empty( $terms ) ) {
+		return '';
+	}
+
+	return $terms[0]->name;
+}
+
+function property_listings_render_scene_archive_pagination( $selected_term ) {
+	global $wp_query;
+
+	if ( empty( $wp_query ) || $wp_query->max_num_pages < 2 ) {
+		return '';
+	}
+
+	$links = paginate_links(
+		array(
+			'total'     => (int) $wp_query->max_num_pages,
+			'current'   => max( 1, get_query_var( 'paged', 1 ) ),
+			'type'      => 'array',
+			'mid_size'  => 1,
+			'end_size'  => 1,
+			'prev_text' => __( 'Previous', 'property-listings' ),
+			'next_text' => __( 'Next', 'property-listings' ),
+			'add_args'  => $selected_term ? array( 'episode_category' => $selected_term ) : array(),
+		)
+	);
+
+	if ( empty( $links ) ) {
+		return '';
+	}
+
+	$items = array();
+
+	foreach ( $links as $link ) {
+		if ( false !== strpos( $link, 'dots' ) ) {
+			$items[] = '<span class="pagination-ellipsis" aria-hidden="true">...</span>';
+			continue;
+		}
+
+		$classes = 'pagination-link';
+
+		if ( false !== strpos( $link, 'current' ) ) {
+			$classes .= ' is-active';
+		}
+
+		if ( false !== strpos( $link, 'prev' ) ) {
+			$classes .= ' pagination-prev';
+		}
+
+		if ( false !== strpos( $link, 'next' ) ) {
+			$classes .= ' pagination-next';
+		}
+
+		$items[] = preg_replace( '/class="[^"]*"/', 'class="' . esc_attr( $classes ) . '"', $link, 1 );
+	}
+
+	return '<nav class="pagination reveal" aria-label="Scenes pagination">' . implode( '', $items ) . '</nav>';
+}
+
+function property_listings_get_scene_archive_source_page() {
+	$page_candidates = array(
+		(int) apply_filters( 'property_listings_scene_archive_page_id', 10 ),
+		get_page_by_path( 'episodes' ),
+		get_page_by_path( 'episode-page' ),
+		get_page_by_title( 'Episodes' ),
+		get_page_by_title( 'Episode Page' ),
+	);
+
+	foreach ( $page_candidates as $candidate ) {
+		if ( $candidate instanceof WP_Post && 'page' === $candidate->post_type ) {
+			return $candidate;
+		}
+
+		if ( is_numeric( $candidate ) && $candidate > 0 ) {
+			$page = get_post( (int) $candidate );
+
+			if ( $page instanceof WP_Post && 'page' === $page->post_type ) {
+				return $page;
+			}
+		}
+	}
+
+	return null;
+}
+
+function property_listings_get_scene_archive_text( $field_name, $default = '', $page_id = 0 ) {
+	if ( $page_id ) {
+		$value = property_listings_get_agent_meta( $field_name, $page_id );
+
+		if ( is_string( $value ) && '' !== trim( $value ) ) {
+			return trim( wp_strip_all_tags( $value ) );
+		}
+	}
+
+	return $default;
+}
+
+function property_listings_collect_scene_archive_text_from_blocks( $blocks, &$text_parts ) {
+	foreach ( $blocks as $block ) {
+		if ( ! is_array( $block ) ) {
+			continue;
+		}
+
+		$block_name = isset( $block['blockName'] ) ? $block['blockName'] : '';
+		$inner_html = isset( $block['innerHTML'] ) ? trim( (string) $block['innerHTML'] ) : '';
+
+		if ( in_array( $block_name, array( 'core/paragraph', 'core/heading' ), true ) && '' !== $inner_html ) {
+			$text = trim( wp_strip_all_tags( $inner_html ) );
+
+			if ( '' !== $text ) {
+				$text_parts[] = array(
+					'type' => 'core/heading' === $block_name ? 'heading' : 'paragraph',
+					'text' => $text,
+				);
+			}
+		}
+
+		if ( ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
+			property_listings_collect_scene_archive_text_from_blocks( $block['innerBlocks'], $text_parts );
+		}
+	}
+}
+
+function property_listings_get_scene_archive_page_content_parts( $page_id ) {
+	$defaults = array(
+		'eyebrow'        => 'Real Estate Podcast',
+		'heading'        => 'Our Real Estate Podcast Videos',
+		'intro'          => 'A clean archive page for browsing podcast videos, spotlight scenes, and premium property moments from the show.',
+		'section_heading'=> 'Episodes',
+	);
+
+	if ( ! $page_id ) {
+		return $defaults;
+	}
+
+	$page_content = get_post_field( 'post_content', $page_id );
+
+	if ( ! is_string( $page_content ) || '' === trim( $page_content ) ) {
+		return $defaults;
+	}
+
+	$text_parts = array();
+	property_listings_collect_scene_archive_text_from_blocks( parse_blocks( $page_content ), $text_parts );
+
+	if ( ! empty( $text_parts[0]['text'] ) ) {
+		$defaults['eyebrow'] = $text_parts[0]['text'];
+	}
+
+	if ( ! empty( $text_parts[1]['text'] ) ) {
+		$defaults['heading'] = $text_parts[1]['text'];
+	}
+
+	if ( ! empty( $text_parts[2]['text'] ) ) {
+		$defaults['intro'] = $text_parts[2]['text'];
+	}
+
+	if ( ! empty( $text_parts[3]['text'] ) ) {
+		$defaults['section_heading'] = $text_parts[3]['text'];
+	}
+
+	return $defaults;
+}
+
+function property_listings_render_scene_archive_shortcode() {
+	if ( ! is_post_type_archive( 'scene' ) ) {
+		return '';
+	}
+
+	global $wp_query;
+
+	$taxonomy         = property_listings_get_scene_taxonomy();
+	$selected_term    = property_listings_get_scene_selected_term_slug( $taxonomy );
+	$current_page     = max( 1, get_query_var( 'paged', 1 ) );
+	$total_pages      = max( 1, (int) $wp_query->max_num_pages );
+	$available_terms  = array();
+	$pagination_markup = property_listings_render_scene_archive_pagination( $selected_term );
+	$source_page      = property_listings_get_scene_archive_source_page();
+	$source_page_id   = $source_page instanceof WP_Post ? (int) $source_page->ID : 0;
+	$page_content_parts = property_listings_get_scene_archive_page_content_parts( $source_page_id );
+	$page_title       = $page_content_parts['heading'];
+	$page_eyebrow     = $page_content_parts['eyebrow'];
+	$section_heading  = $page_content_parts['section_heading'];
+	$intro_copy       = $page_content_parts['intro'];
+
+	if ( ! empty( $taxonomy ) && ! empty( $taxonomy->name ) ) {
+		$available_terms = get_terms(
+			array(
+				'taxonomy'   => $taxonomy->name,
+				'hide_empty' => true,
+			)
+		);
+
+		if ( is_wp_error( $available_terms ) ) {
+			$available_terms = array();
+		}
+	}
+
+	ob_start();
+	?>
+	<main>
+		<section class="episodes-page-intro section-light">
+			<div class="container">
+				<div class="episodes-page-head reveal">
+					<div class="episodes-title-block">
+						<p class="eyebrow"><?php echo esc_html( $page_eyebrow ); ?></p>
+						<h1><?php echo esc_html( $page_title ); ?></h1>
+					</div>
+
+					<?php if ( ! empty( $available_terms ) && ! empty( $taxonomy ) ) : ?>
+						<form class="episodes-filter-panel" method="get" action="<?php echo esc_url( get_post_type_archive_link( 'scene' ) ); ?>">
+							<label for="episodeCategory" class="episodes-filter-label"><?php echo esc_html( $taxonomy->labels->name ); ?></label>
+							<div class="episodes-select-wrap">
+								<select id="episodeCategory" name="episode_category" onchange="this.form.submit()">
+									<option value=""><?php esc_html_e( 'All Categories', 'property-listings' ); ?></option>
+									<?php foreach ( $available_terms as $term ) : ?>
+										<option value="<?php echo esc_attr( $term->slug ); ?>" <?php selected( $selected_term, $term->slug ); ?>><?php echo esc_html( $term->name ); ?></option>
+									<?php endforeach; ?>
+								</select>
+								<i class="bi bi-chevron-down" aria-hidden="true"></i>
+							</div>
+						</form>
+					<?php endif; ?>
+				</div>
+
+				<p class="episodes-intro-copy reveal"><?php echo esc_html( $intro_copy ); ?></p>
+			</div>
+		</section>
+
+		<section class="scene-library section-light alt-surface">
+			<div class="container">
+				<div class="scene-library-bar reveal">
+					<h2><?php echo esc_html( $section_heading ); ?></h2>
+					<p><?php echo esc_html( sprintf( 'Page %1$d of %2$d', $current_page, $total_pages ) ); ?></p>
+				</div>
+
+				<?php if ( have_posts() ) : ?>
+					<div class="scene-grid">
+						<?php
+						while ( have_posts() ) :
+							the_post();
+
+							$post_id     = get_the_ID();
+							$title       = get_the_title();
+							$link_data   = property_listings_get_scene_card_link_data( $post_id );
+							$term_label  = property_listings_get_scene_card_term_label( $post_id, $taxonomy );
+							$description = get_the_excerpt();
+
+							if ( '' === trim( $description ) ) {
+								$description = wp_trim_words( wp_strip_all_tags( get_the_content() ), 16 );
+							}
+							?>
+							<article class="scene-card reveal">
+								<a href="<?php echo esc_url( $link_data['url'] ); ?>" class="scene-thumb"<?php echo $link_data['target']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php echo $link_data['rel']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+									<?php echo property_listings_get_scene_card_thumbnail( $post_id, $title ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								</a>
+								<div class="scene-card-content">
+									<?php if ( ! empty( $term_label ) ) : ?>
+										<p class="meta"><?php echo esc_html( $term_label ); ?></p>
+									<?php endif; ?>
+									<h3><a href="<?php echo esc_url( $link_data['url'] ); ?>"<?php echo $link_data['target']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php echo $link_data['rel']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html( $title ); ?></a></h3>
+									<?php if ( ! empty( $description ) ) : ?>
+										<p><?php echo esc_html( $description ); ?></p>
+									<?php endif; ?>
+								</div>
+							</article>
+						<?php endwhile; ?>
+					</div>
+
+					<?php echo $pagination_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php else : ?>
+					<div class="scene-empty-state reveal">
+						<p>No episodes found yet. Add `scene` entries to populate this archive.</p>
+					</div>
+				<?php endif; ?>
+			</div>
+		</section>
+	</main>
+	<?php
+	wp_reset_postdata();
+
+	return ob_get_clean();
+}
+add_shortcode( 'property_listings_scene_archive', 'property_listings_render_scene_archive_shortcode' );
+
 function property_listings_get_agent_scenes( $agent_id ) {
 	$related_query = new WP_Query(
 		array(
@@ -322,7 +764,7 @@ function property_listings_get_seo_post_id() {
 		return get_queried_object_id();
 	}
 
-	if ( is_posts_page() ) {
+	if ( function_exists( 'is_home' ) && is_home() ) {
 		return (int) get_option( 'page_for_posts' );
 	}
 
