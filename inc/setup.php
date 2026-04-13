@@ -50,6 +50,26 @@ function property_listings_render_header_title() {
 }
 add_shortcode( 'property_listings_header_title', 'property_listings_render_header_title' );
 
+function property_listings_render_page_intro() {
+	$post_id = get_queried_object_id();
+
+	if ( ! $post_id || ! has_excerpt( $post_id ) ) {
+		return '';
+	}
+
+	$excerpt = get_the_excerpt( $post_id );
+
+	if ( ! is_string( $excerpt ) || '' === trim( wp_strip_all_tags( $excerpt ) ) ) {
+		return '';
+	}
+
+	return sprintf(
+		'<p class="content-page-intro">%1$s</p><hr class="section-divider" />',
+		esc_html( trim( wp_strip_all_tags( $excerpt ) ) )
+	);
+}
+add_shortcode( 'property_listings_page_intro', 'property_listings_render_page_intro' );
+
 function property_listings_get_agent_meta( $field_name, $post_id ) {
 	if ( function_exists( 'get_field' ) ) {
 		return get_field( $field_name, $post_id );
