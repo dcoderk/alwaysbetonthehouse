@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "property-listings/latest-episodes",
+	"title": "Latest Episodes",
+	"category": "widgets",
+	"icon": "video-alt3",
+	"description": "Editable latest episodes section that loads real scene content.",
+	"textdomain": "property-listings",
+	"keywords": ["episodes", "scene", "video", "homepage"],
+	"editorScript": "property-listings-latest-episodes-editor",
+	"render": "file:./render.php",
+	"attributes": {
+		"heading": {
+			"type": "string",
+			"default": "Latest Episodes"
+		},
+		"description": {
+			"type": "string",
+			"default": "Large 700x394 style thumbnails only. No video player. Every episode links out to YouTube or Vimeo."
+		},
+		"buttonText": {
+			"type": "string",
+			"default": "All Episodes"
+		}
+	},
+	"supports": {
+		"html": false
+	}
+}

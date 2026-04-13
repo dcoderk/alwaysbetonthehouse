@@ -25,6 +25,12 @@ function property_listings_setup() {
 }
 add_action( 'after_setup_theme', 'property_listings_setup' );
 
+function property_listings_disable_agent_editor() {
+	remove_post_type_support( 'agent', 'editor' );
+	remove_post_type_support( 'scene', 'editor' );
+}
+add_action( 'init', 'property_listings_disable_agent_editor', 100 );
+
 function property_listings_get_header_title() {
 	return 'ALWAYS BET ON THE HOUSE';
 }
@@ -50,6 +56,22 @@ function property_listings_get_agent_meta( $field_name, $post_id ) {
 	}
 
 	return get_post_meta( $post_id, $field_name, true );
+}
+
+function property_listings_get_current_view_meta( $field_name, $default = '' ) {
+	$post_id = get_queried_object_id();
+
+	if ( ! $post_id ) {
+		return $default;
+	}
+
+	$value = property_listings_get_agent_meta( $field_name, $post_id );
+
+	if ( is_string( $value ) && '' !== trim( $value ) ) {
+		return trim( wp_strip_all_tags( $value ) );
+	}
+
+	return $default;
 }
 
 function property_listings_get_related_item_location( $post_id ) {
@@ -353,12 +375,6 @@ function property_listings_get_scene_card_description( $post_id ) {
 		return trim( wp_strip_all_tags( $excerpt ) );
 	}
 
-	$content = get_post_field( 'post_content', $post_id );
-
-	if ( is_string( $content ) && '' !== trim( $content ) ) {
-		return wp_trim_words( wp_strip_all_tags( $content ), 16 );
-	}
-
 	$location = property_listings_get_related_item_location( $post_id );
 
 	if ( '' !== trim( $location ) ) {
@@ -646,6 +662,145 @@ function property_listings_render_scene_archive_shortcode() {
 }
 add_shortcode( 'property_listings_scene_archive', 'property_listings_render_scene_archive_shortcode' );
 
+function property_listings_get_scene_platform_label( $url ) {
+	if ( ! is_string( $url ) || '' === trim( $url ) ) {
+		return '';
+	}
+
+	$host = wp_parse_url( trim( $url ), PHP_URL_HOST );
+
+	if ( ! is_string( $host ) || '' === $host ) {
+		return '';
+	}
+
+	$host = strtolower( $host );
+
+	if ( false !== strpos( $host, 'youtube.com' ) || false !== strpos( $host, 'youtu.be' ) ) {
+		return 'YouTube';
+	}
+
+	if ( false !== strpos( $host, 'vimeo.com' ) ) {
+		return 'Vimeo';
+	}
+
+	return 'Watch';
+}
+
+function property_listings_get_scene_homepage_meta( $post_id ) {
+	$meta_fields = array(
+		'episode_label',
+		'episode_number',
+		'episode_code',
+		'season_episode',
+		'display_label',
+	);
+
+	foreach ( $meta_fields as $field_name ) {
+		$value = property_listings_get_agent_meta( $field_name, $post_id );
+
+		if ( is_string( $value ) && '' !== trim( $value ) ) {
+			return trim( wp_strip_all_tags( $value ) );
+		}
+	}
+
+	return get_the_date( 'F j, Y', $post_id );
+}
+
+function property_listings_render_latest_episodes_section( $args = array() ) {
+	$args = wp_parse_args(
+		$args,
+		array(
+			'heading'     => 'Latest Episodes',
+			'description' => 'Large 700x394 style thumbnails only. No video player. Every episode links out to YouTube or Vimeo.',
+			'buttonText'  => 'All Episodes',
+			'className'   => '',
+		)
+	);
+
+	$episodes_query = new WP_Query(
+		array(
+			'post_type'      => 'scene',
+			'post_status'    => 'publish',
+			'posts_per_page' => 3,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		)
+	);
+
+	ob_start();
+	?>
+	<section class="episodes section-grey <?php echo esc_attr( trim( (string) $args['className'] ) ); ?>">
+		<div class="container">
+			<div class="section-heading reveal">
+				<?php if ( ! empty( $args['heading'] ) ) : ?>
+					<h2><?php echo esc_html( $args['heading'] ); ?></h2>
+				<?php endif; ?>
+				<?php if ( ! empty( $args['description'] ) ) : ?>
+					<p><?php echo esc_html( $args['description'] ); ?></p>
+				<?php endif; ?>
+			</div>
+
+			<?php if ( $episodes_query->have_posts() ) : ?>
+				<div class="episode-list">
+					<?php
+					while ( $episodes_query->have_posts() ) :
+						$episodes_query->the_post();
+
+						$post_id        = get_the_ID();
+						$title          = get_the_title();
+						$link_data      = property_listings_get_scene_card_link_data( $post_id );
+						$thumb_html     = property_listings_clean_media_markup( property_listings_get_scene_card_thumbnail( $post_id, $title ) );
+						$description    = property_listings_get_scene_card_description( $post_id );
+						$platform_label = property_listings_get_scene_platform_label( $link_data['url'] );
+						$meta_label     = property_listings_get_scene_homepage_meta( $post_id );
+						?>
+						<article class="episode-row reveal">
+							<a class="episode-thumb" href="<?php echo esc_url( $link_data['url'] ); ?>"<?php echo $link_data['target']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php echo $link_data['rel']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+								<?php echo $thumb_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								<?php if ( ! empty( $platform_label ) ) : ?>
+									<span class="platform-chip"><?php echo esc_html( $platform_label ); ?></span>
+								<?php endif; ?>
+							</a>
+							<div class="episode-body">
+								<?php if ( ! empty( $meta_label ) ) : ?>
+									<p class="meta"><?php echo esc_html( $meta_label ); ?></p>
+								<?php endif; ?>
+								<h2><?php echo esc_html( $title ); ?></h2>
+								<p><?php echo esc_html( $description ); ?></p>
+								<a href="<?php echo esc_url( $link_data['url'] ); ?>"<?php echo $link_data['target']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php echo $link_data['rel']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> class="text-link">Watch Episode &rarr;</a>
+							</div>
+						</article>
+					<?php endwhile; ?>
+				</div>
+			<?php else : ?>
+				<div class="episode-list">
+					<article class="episode-row reveal">
+						<div class="episode-body">
+							<h2>Latest Episodes Coming Soon</h2>
+							<p>Add `scene` posts to populate this section automatically.</p>
+						</div>
+					</article>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $args['buttonText'] ) ) : ?>
+				<div class="center-button reveal">
+					<a href="<?php echo esc_url( get_post_type_archive_link( 'scene' ) ); ?>" class="btn btn-dark"><?php echo esc_html( $args['buttonText'] ); ?></a>
+				</div>
+			<?php endif; ?>
+		</div>
+	</section>
+	<?php
+	wp_reset_postdata();
+
+	return trim( ob_get_clean() );
+}
+
+function property_listings_render_latest_episodes_shortcode() {
+	return property_listings_render_latest_episodes_section();
+}
+add_shortcode( 'property_listings_latest_episodes', 'property_listings_render_latest_episodes_shortcode' );
+
 function property_listings_get_agent_scenes( $agent_id ) {
 	$related_query = new WP_Query(
 		array(
@@ -678,7 +833,6 @@ function property_listings_render_agent_profile_shortcode() {
 
 	$agent_name     = get_the_title( $post_id );
 	$agent_bio      = property_listings_get_agent_meta( 'short_bio', $post_id );
-	$agent_content  = get_post_field( 'post_content', $post_id );
 	$occupation     = property_listings_get_agent_meta( 'occupation', $post_id );
 	$company        = property_listings_get_agent_meta( 'company', $post_id );
 	$phone          = property_listings_get_agent_meta( 'phone', $post_id );
@@ -698,10 +852,6 @@ function property_listings_render_agent_profile_shortcode() {
 			'alt'   => $agent_name,
 		)
 	);
-
-	if ( empty( $agent_bio ) && ! empty( $agent_content ) ) {
-		$agent_bio = wp_trim_words( wp_strip_all_tags( $agent_content ), 55 );
-	}
 
 	if ( empty( $latest_intro ) ) {
 		$latest_intro = 'Episodes or scenes connected to this agent can be highlighted here.';
@@ -906,7 +1056,6 @@ function property_listings_output_agent_schema() {
 
 	$name        = get_the_title( $post_id );
 	$description = property_listings_get_agent_meta( 'short_bio', $post_id );
-	$content     = get_post_field( 'post_content', $post_id );
 	$email       = property_listings_get_agent_meta( 'email', $post_id );
 	$phone       = property_listings_get_agent_meta( 'phone', $post_id );
 	$website     = property_listings_get_agent_meta( 'website', $post_id );
@@ -916,10 +1065,6 @@ function property_listings_output_agent_schema() {
 	$company     = property_listings_get_agent_meta( 'company', $post_id );
 	$image_url   = get_the_post_thumbnail_url( $post_id, 'full' );
 	$permalink   = get_permalink( $post_id );
-
-	if ( empty( $description ) && ! empty( $content ) ) {
-		$description = wp_trim_words( wp_strip_all_tags( $content ), 55 );
-	}
 
 	$schema = array(
 		'@context'         => 'https://schema.org',
@@ -974,8 +1119,9 @@ function property_listings_output_agent_schema() {
 add_action( 'wp_head', 'property_listings_output_agent_schema', 5 );
 
 function property_listings_register_blocks() {
-	$hero_slider_editor_js_path  = get_theme_file_path( '/blocks/hero-slider/editor.js' );
-	$host_section_editor_js_path = get_theme_file_path( '/blocks/host-section/editor.js' );
+	$hero_slider_editor_js_path     = get_theme_file_path( '/blocks/hero-slider/editor.js' );
+	$host_section_editor_js_path    = get_theme_file_path( '/blocks/host-section/editor.js' );
+	$latest_episodes_editor_js_path = get_theme_file_path( '/blocks/latest-episodes/editor.js' );
 
 	wp_register_script(
 		'property-listings-hero-slider-editor',
@@ -1001,8 +1147,17 @@ function property_listings_register_blocks() {
 		true
 	);
 
+	wp_register_script(
+		'property-listings-latest-episodes-editor',
+		get_theme_file_uri( '/blocks/latest-episodes/editor.js' ),
+		array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-element', 'wp-i18n' ),
+		file_exists( $latest_episodes_editor_js_path ) ? filemtime( $latest_episodes_editor_js_path ) : null,
+		true
+	);
+
 	register_block_type( get_theme_file_path( '/blocks/hero-slider' ) );
 	register_block_type( get_theme_file_path( '/blocks/host-section' ) );
+	register_block_type( get_theme_file_path( '/blocks/latest-episodes' ) );
 }
 add_action( 'init', 'property_listings_register_blocks' );
 
