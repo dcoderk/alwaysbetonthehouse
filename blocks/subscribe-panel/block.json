@@ -1,0 +1,34 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "property-listings/subscribe-panel",
+	"title": "Subscribe Panel",
+	"category": "widgets",
+	"icon": "email-alt",
+	"description": "Editable subscribe call-to-action section for the homepage.",
+	"textdomain": "property-listings",
+	"keywords": ["subscribe", "cta", "podcast", "newsletter"],
+	"editorScript": "property-listings-subscribe-panel-editor",
+	"render": "file:./render.php",
+	"attributes": {
+		"heading": {
+			"type": "string",
+			"default": "Subscribe to Podcast"
+		},
+		"description": {
+			"type": "string",
+			"default": "Get updates on new episodes, guest features, and spotlight properties."
+		},
+		"buttonText": {
+			"type": "string",
+			"default": "Subscribe"
+		},
+		"buttonUrl": {
+			"type": "string",
+			"default": "#"
+		}
+	},
+	"supports": {
+		"html": false
+	}
+}

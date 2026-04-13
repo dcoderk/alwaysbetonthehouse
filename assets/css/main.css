@@ -251,9 +251,50 @@ article.episode-row.reveal br {
 	box-shadow: 0 12px 28px rgba(19, 20, 15, 0.22);
 }
 
+.btn.btn-gold {
+	background: var(--gold);
+	color: #13140f;
+	border-color: rgba(212, 165, 68, 0.42);
+}
+
+.btn.btn-gold:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 12px 28px rgba(212, 165, 68, 0.22);
+	background: var(--gold-2);
+}
+
 .center-button {
 	margin-top: 28px;
 	text-align: center;
+}
+
+.subscribe {
+	padding: 82px 0 92px;
+}
+
+.subscribe-panel {
+	padding: 42px 36px;
+	border: 1px solid rgba(212, 165, 68, 0.18);
+	border-radius: 28px;
+	background: linear-gradient(135deg, rgba(18, 18, 18, 0.96), rgba(13, 20, 21, 0.92));
+	box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+	text-align: center;
+}
+
+.subscribe-panel h2 {
+	margin: 0 0 12px;
+	color: var(--text);
+	font-family: "Cormorant Garamond", serif;
+	font-size: clamp(2.4rem, 4vw, 3.4rem);
+	line-height: 0.95;
+}
+
+.subscribe-panel p {
+	max-width: 620px;
+	margin: 0 auto 22px;
+	color: var(--muted);
+	font-size: 1.05rem;
+	line-height: 1.7;
 }
 
 .featured-grid {
@@ -1181,7 +1222,8 @@ a.wp-block-social-link-anchor:focus-visible::after {
 	}
 
 	.episodes,
-	.featured {
+	.featured,
+	.subscribe {
 		padding: 64px 0 72px;
 	}
 
@@ -1204,6 +1246,10 @@ a.wp-block-social-link-anchor:focus-visible::after {
 
 	.featured-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.subscribe-panel {
+		padding: 34px 24px;
 	}
 }
 
