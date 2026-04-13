@@ -706,6 +706,56 @@ function property_listings_get_scene_homepage_meta( $post_id ) {
 	return get_the_date( 'F j, Y', $post_id );
 }
 
+function property_listings_get_scene_price( $post_id ) {
+	$price_fields = array(
+		'price',
+		'listing_price',
+		'property_price',
+		'asking_price',
+	);
+
+	foreach ( $price_fields as $field_name ) {
+		$value = property_listings_get_agent_meta( $field_name, $post_id );
+
+		if ( is_string( $value ) && '' !== trim( $value ) ) {
+			return trim( wp_strip_all_tags( $value ) );
+		}
+	}
+
+	return '';
+}
+
+function property_listings_get_scene_agent_data( $post_id ) {
+	$agent_value = property_listings_get_agent_meta( 'agent_on_video', $post_id );
+	$agent_id    = 0;
+
+	if ( is_array( $agent_value ) ) {
+		$first = reset( $agent_value );
+
+		if ( $first instanceof WP_Post ) {
+			$agent_id = (int) $first->ID;
+		} elseif ( is_numeric( $first ) ) {
+			$agent_id = (int) $first;
+		}
+	} elseif ( $agent_value instanceof WP_Post ) {
+		$agent_id = (int) $agent_value->ID;
+	} elseif ( is_numeric( $agent_value ) ) {
+		$agent_id = (int) $agent_value;
+	}
+
+	if ( ! $agent_id ) {
+		return array(
+			'name' => '',
+			'url'  => '',
+		);
+	}
+
+	return array(
+		'name' => get_the_title( $agent_id ),
+		'url'  => get_permalink( $agent_id ),
+	);
+}
+
 function property_listings_render_latest_episodes_section( $args = array() ) {
 	$args = wp_parse_args(
 		$args,
@@ -1119,9 +1169,10 @@ function property_listings_output_agent_schema() {
 add_action( 'wp_head', 'property_listings_output_agent_schema', 5 );
 
 function property_listings_register_blocks() {
-	$hero_slider_editor_js_path     = get_theme_file_path( '/blocks/hero-slider/editor.js' );
-	$host_section_editor_js_path    = get_theme_file_path( '/blocks/host-section/editor.js' );
-	$latest_episodes_editor_js_path = get_theme_file_path( '/blocks/latest-episodes/editor.js' );
+	$hero_slider_editor_js_path       = get_theme_file_path( '/blocks/hero-slider/editor.js' );
+	$host_section_editor_js_path      = get_theme_file_path( '/blocks/host-section/editor.js' );
+	$latest_episodes_editor_js_path   = get_theme_file_path( '/blocks/latest-episodes/editor.js' );
+	$featured_episodes_editor_js_path = get_theme_file_path( '/blocks/featured-episodes/editor.js' );
 
 	wp_register_script(
 		'property-listings-hero-slider-editor',
@@ -1155,9 +1206,18 @@ function property_listings_register_blocks() {
 		true
 	);
 
+	wp_register_script(
+		'property-listings-featured-episodes-editor',
+		get_theme_file_uri( '/blocks/featured-episodes/editor.js' ),
+		array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-element', 'wp-i18n' ),
+		file_exists( $featured_episodes_editor_js_path ) ? filemtime( $featured_episodes_editor_js_path ) : null,
+		true
+	);
+
 	register_block_type( get_theme_file_path( '/blocks/hero-slider' ) );
 	register_block_type( get_theme_file_path( '/blocks/host-section' ) );
 	register_block_type( get_theme_file_path( '/blocks/latest-episodes' ) );
+	register_block_type( get_theme_file_path( '/blocks/featured-episodes' ) );
 }
 add_action( 'init', 'property_listings_register_blocks' );
 

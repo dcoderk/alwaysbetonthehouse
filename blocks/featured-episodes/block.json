@@ -1,0 +1,64 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "property-listings/featured-episodes",
+	"title": "Featured Episodes",
+	"category": "widgets",
+	"icon": "star-filled",
+	"description": "Editable featured episode cards for the homepage.",
+	"textdomain": "property-listings",
+	"keywords": ["featured", "episodes", "cards", "homepage"],
+	"editorScript": "property-listings-featured-episodes-editor",
+	"render": "file:./render.php",
+	"attributes": {
+		"heading": {
+			"type": "string",
+			"default": "Featured Episodes"
+		},
+		"description": {
+			"type": "string",
+			"default": "Secondary highlights for signature conversations, showcase homes, and promoted content."
+		},
+		"cards": {
+			"type": "array",
+			"default": [
+				{
+					"title": "Vegas Heights",
+					"address": "Summerlin, Las Vegas, NV",
+					"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+					"price": "$4,100,000",
+					"agentName": "Daniel Harper",
+					"agentUrl": "#",
+					"linkUrl": "https://www.youtube.com/",
+					"imageUrl": "https://images.unsplash.com/photo-1600585154084-4e5fe7c39198?auto=format&fit=crop&w=1000&q=80",
+					"imageAlt": "Featured episode card for Vegas Heights"
+				},
+				{
+					"title": "Strip View House",
+					"address": "The Strip, Las Vegas, NV",
+					"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+					"price": "$5,500,000",
+					"agentName": "Monica Reeves",
+					"agentUrl": "#",
+					"linkUrl": "https://vimeo.com/",
+					"imageUrl": "https://images.unsplash.com/photo-1605146769289-440113cc3d00?auto=format&fit=crop&w=1000&q=80",
+					"imageAlt": "Featured episode card for Strip View House"
+				},
+				{
+					"title": "Sunset Ridge",
+					"address": "Henderson, NV",
+					"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+					"price": "$7,200,000",
+					"agentName": "Ashley Bennett",
+					"agentUrl": "#",
+					"linkUrl": "https://www.youtube.com/",
+					"imageUrl": "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=1000&q=80",
+					"imageAlt": "Featured episode card for Sunset Ridge"
+				}
+			]
+		}
+	},
+	"supports": {
+		"html": false
+	}
+}
