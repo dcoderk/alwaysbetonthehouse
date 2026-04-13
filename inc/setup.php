@@ -88,12 +88,21 @@ function property_listings_render_agent_listing_card( $post ) {
 	$related_link       = get_permalink( $post );
 	$related_location   = property_listings_get_related_item_location( $post->ID );
 	$related_thumb      = get_the_post_thumbnail( $post, 'medium_large', array( 'alt' => $related_title ) );
+	$related_meta_label = '';
+	$related_summary    = '';
 	$open_in_new_window = false;
 
 	if ( 'scene' === $post->post_type ) {
 		$video_link        = property_listings_get_agent_meta( 'video_link', $post->ID );
 		$video_screenshot  = property_listings_get_agent_meta( 'video_screenshot', $post->ID );
 		$open_in_new_window = (bool) property_listings_get_agent_meta( 'open_in_new_window', $post->ID );
+		$scene_taxonomy    = property_listings_get_scene_taxonomy();
+		$related_meta_label = property_listings_get_scene_card_term_label( $post->ID, $scene_taxonomy );
+		$related_summary    = get_the_excerpt( $post );
+
+		if ( '' === trim( $related_summary ) ) {
+			$related_summary = wp_trim_words( wp_strip_all_tags( get_post_field( 'post_content', $post->ID ) ), 16 );
+		}
 
 		if ( ! empty( $video_link ) ) {
 			$related_link = $video_link;
@@ -129,10 +138,12 @@ function property_listings_render_agent_listing_card( $post ) {
 
 	$link_target = $open_in_new_window ? ' target="_blank" rel="noopener noreferrer"' : '';
 
-	$thumb_markup = ! empty( $related_thumb ) ? $related_thumb : '<div class="agent-listing-thumb agent-listing-thumb--placeholder" aria-hidden="true"></div>';
+	$thumb_markup   = ! empty( $related_thumb ) ? property_listings_clean_media_markup( $related_thumb ) : '<div class="agent-listing-thumb agent-listing-thumb--placeholder" aria-hidden="true"></div>';
 	$location_markup = ! empty( $related_location ) ? '<p>' . esc_html( $related_location ) . '</p>' : '';
+	$meta_markup    = ! empty( $related_meta_label ) ? '<p class="meta">' . esc_html( $related_meta_label ) . '</p>' : '';
+	$summary_markup = ! empty( $related_summary ) ? '<p>' . esc_html( $related_summary ) . '</p>' : $location_markup;
 
-	return '<article class="agent-listing-card"><a href="' . esc_url( $related_link ) . '" class="agent-listing-thumb"' . $link_target . '>' . $thumb_markup . '</a><div class="agent-listing"><h3><a href="' . esc_url( $related_link ) . '"' . $link_target . '>' . esc_html( $related_title ) . '</a></h3>' . $location_markup . '</div></article>';
+	return '<article class="agent-listing-card"><a href="' . esc_url( $related_link ) . '" class="agent-listing-thumb"' . $link_target . '>' . $thumb_markup . '</a><div class="agent-listing">' . $meta_markup . '<h3><a href="' . esc_url( $related_link ) . '"' . $link_target . '>' . esc_html( $related_title ) . '</a></h3>' . $summary_markup . '</div></article>';
 }
 
 function property_listings_get_scene_taxonomy() {
@@ -239,6 +250,17 @@ function property_listings_get_scene_card_link_data( $post_id ) {
 	return $link_data;
 }
 
+function property_listings_clean_media_markup( $markup ) {
+	if ( ! is_string( $markup ) || '' === $markup ) {
+		return $markup;
+	}
+
+	$markup = preg_replace( '#^\s*(<br\s*/?>\s*)+#i', '', $markup );
+	$markup = preg_replace( '#(<a[^>]*>)\s*(<br\s*/?>\s*)+#i', '$1', $markup );
+
+	return trim( $markup );
+}
+
 function property_listings_get_scene_card_thumbnail( $post_id, $title ) {
 	$video_screenshot = property_listings_get_agent_meta( 'video_screenshot', $post_id );
 
@@ -247,38 +269,46 @@ function property_listings_get_scene_card_thumbnail( $post_id, $title ) {
 	}
 
 	if ( is_numeric( $video_screenshot ) && ! empty( $video_screenshot ) ) {
-		return wp_get_attachment_image(
+		return property_listings_clean_media_markup(
+			wp_get_attachment_image(
 			(int) $video_screenshot,
 			'large',
 			false,
 			array(
 				'alt' => $title,
 			)
+		)
 		);
 	}
 
 	if ( is_array( $video_screenshot ) && ! empty( $video_screenshot['url'] ) ) {
-		return sprintf(
+		return property_listings_clean_media_markup(
+			sprintf(
 			'<img src="%1$s" alt="%2$s" />',
 			esc_url( $video_screenshot['url'] ),
 			esc_attr( $title )
+			)
 		);
 	}
 
 	if ( is_string( $video_screenshot ) && '' !== trim( $video_screenshot ) ) {
-		return sprintf(
+		return property_listings_clean_media_markup(
+			sprintf(
 			'<img src="%1$s" alt="%2$s" />',
 			esc_url( $video_screenshot ),
 			esc_attr( $title )
+			)
 		);
 	}
 
 	if ( has_post_thumbnail( $post_id ) ) {
-		return get_the_post_thumbnail(
+		return property_listings_clean_media_markup(
+			get_the_post_thumbnail(
 			$post_id,
 			'large',
 			array(
 				'alt' => $title,
+			)
 			)
 		);
 	}
@@ -298,6 +328,44 @@ function property_listings_get_scene_card_term_label( $post_id, $taxonomy ) {
 	}
 
 	return $terms[0]->name;
+}
+
+function property_listings_get_scene_card_description( $post_id ) {
+	$description_fields = array(
+		'short_description',
+		'description',
+		'scene_description',
+		'episode_description',
+		'summary',
+	);
+
+	foreach ( $description_fields as $field_name ) {
+		$value = property_listings_get_agent_meta( $field_name, $post_id );
+
+		if ( is_string( $value ) && '' !== trim( $value ) ) {
+			return trim( wp_strip_all_tags( $value ) );
+		}
+	}
+
+	$excerpt = get_post_field( 'post_excerpt', $post_id );
+
+	if ( is_string( $excerpt ) && '' !== trim( $excerpt ) ) {
+		return trim( wp_strip_all_tags( $excerpt ) );
+	}
+
+	$content = get_post_field( 'post_content', $post_id );
+
+	if ( is_string( $content ) && '' !== trim( $content ) ) {
+		return wp_trim_words( wp_strip_all_tags( $content ), 16 );
+	}
+
+	$location = property_listings_get_related_item_location( $post_id );
+
+	if ( '' !== trim( $location ) ) {
+		return $location;
+	}
+
+	return 'Episode details coming soon.';
 }
 
 function property_listings_render_scene_archive_pagination( $selected_term ) {
@@ -492,88 +560,89 @@ function property_listings_render_scene_archive_shortcode() {
 
 	ob_start();
 	?>
-	<main>
-		<section class="episodes-page-intro section-light">
-			<div class="container">
-				<div class="episodes-page-head reveal">
-					<div class="episodes-title-block">
-						<p class="eyebrow"><?php echo esc_html( $page_eyebrow ); ?></p>
-						<h1><?php echo esc_html( $page_title ); ?></h1>
-					</div>
-
-					<?php if ( ! empty( $available_terms ) && ! empty( $taxonomy ) ) : ?>
-						<form class="episodes-filter-panel" method="get" action="<?php echo esc_url( get_post_type_archive_link( 'scene' ) ); ?>">
-							<label for="episodeCategory" class="episodes-filter-label"><?php echo esc_html( $taxonomy->labels->name ); ?></label>
-							<div class="episodes-select-wrap">
-								<select id="episodeCategory" name="episode_category" onchange="this.form.submit()">
-									<option value=""><?php esc_html_e( 'All Categories', 'property-listings' ); ?></option>
-									<?php foreach ( $available_terms as $term ) : ?>
-										<option value="<?php echo esc_attr( $term->slug ); ?>" <?php selected( $selected_term, $term->slug ); ?>><?php echo esc_html( $term->name ); ?></option>
-									<?php endforeach; ?>
-								</select>
-								<i class="bi bi-chevron-down" aria-hidden="true"></i>
-							</div>
-						</form>
-					<?php endif; ?>
+	<section class="episodes-page-intro section-light">
+		<div class="container">
+			<div class="episodes-page-head reveal">
+				<div class="episodes-title-block">
+					<p class="eyebrow"><?php echo esc_html( $page_eyebrow ); ?></p>
+					<h1><?php echo esc_html( $page_title ); ?></h1>
 				</div>
 
-				<p class="episodes-intro-copy reveal"><?php echo esc_html( $intro_copy ); ?></p>
-			</div>
-		</section>
-
-		<section class="scene-library section-light alt-surface">
-			<div class="container">
-				<div class="scene-library-bar reveal">
-					<h2><?php echo esc_html( $section_heading ); ?></h2>
-					<p><?php echo esc_html( sprintf( 'Page %1$d of %2$d', $current_page, $total_pages ) ); ?></p>
-				</div>
-
-				<?php if ( have_posts() ) : ?>
-					<div class="scene-grid">
-						<?php
-						while ( have_posts() ) :
-							the_post();
-
-							$post_id     = get_the_ID();
-							$title       = get_the_title();
-							$link_data   = property_listings_get_scene_card_link_data( $post_id );
-							$term_label  = property_listings_get_scene_card_term_label( $post_id, $taxonomy );
-							$description = get_the_excerpt();
-
-							if ( '' === trim( $description ) ) {
-								$description = wp_trim_words( wp_strip_all_tags( get_the_content() ), 16 );
-							}
-							?>
-							<article class="scene-card reveal">
-								<a href="<?php echo esc_url( $link_data['url'] ); ?>" class="scene-thumb"<?php echo $link_data['target']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php echo $link_data['rel']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
-									<?php echo property_listings_get_scene_card_thumbnail( $post_id, $title ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-								</a>
-								<div class="scene-card-content">
-									<?php if ( ! empty( $term_label ) ) : ?>
-										<p class="meta"><?php echo esc_html( $term_label ); ?></p>
-									<?php endif; ?>
-									<h3><a href="<?php echo esc_url( $link_data['url'] ); ?>"<?php echo $link_data['target']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php echo $link_data['rel']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html( $title ); ?></a></h3>
-									<?php if ( ! empty( $description ) ) : ?>
-										<p><?php echo esc_html( $description ); ?></p>
-									<?php endif; ?>
-								</div>
-							</article>
-						<?php endwhile; ?>
-					</div>
-
-					<?php echo $pagination_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-				<?php else : ?>
-					<div class="scene-empty-state reveal">
-						<p>No episodes found yet. Add `scene` entries to populate this archive.</p>
-					</div>
+				<?php if ( ! empty( $available_terms ) && ! empty( $taxonomy ) ) : ?>
+					<form class="episodes-filter-panel" method="get" action="<?php echo esc_url( get_post_type_archive_link( 'scene' ) ); ?>">
+						<label for="episodeCategory" class="episodes-filter-label"><?php echo esc_html( $taxonomy->labels->name ); ?></label>
+						<div class="episodes-select-wrap">
+							<select id="episodeCategory" name="episode_category" onchange="this.form.submit()">
+								<option value=""><?php esc_html_e( 'All Categories', 'property-listings' ); ?></option>
+								<?php foreach ( $available_terms as $term ) : ?>
+									<option value="<?php echo esc_attr( $term->slug ); ?>" <?php selected( $selected_term, $term->slug ); ?>><?php echo esc_html( $term->name ); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<i class="bi bi-chevron-down" aria-hidden="true"></i>
+						</div>
+					</form>
 				<?php endif; ?>
 			</div>
-		</section>
-	</main>
+
+			<p class="episodes-intro-copy reveal"><?php echo esc_html( $intro_copy ); ?></p>
+		</div>
+	</section>
+
+	<section class="scene-library section-light alt-surface">
+		<div class="container">
+			<div class="scene-library-bar reveal">
+				<h2><?php echo esc_html( $section_heading ); ?></h2>
+				<p><?php echo esc_html( sprintf( 'Page %1$d of %2$d', $current_page, $total_pages ) ); ?></p>
+			</div>
+
+			<?php if ( have_posts() ) : ?>
+				<div class="scene-grid">
+					<?php
+					while ( have_posts() ) :
+						the_post();
+
+						$post_id     = get_the_ID();
+						$title       = get_the_title();
+						$link_data   = property_listings_get_scene_card_link_data( $post_id );
+						$term_label  = property_listings_get_scene_card_term_label( $post_id, $taxonomy );
+						$thumb_html  = property_listings_clean_media_markup( property_listings_get_scene_card_thumbnail( $post_id, $title ) );
+						$description = property_listings_get_scene_card_description( $post_id );
+						?>
+						<article class="scene-card reveal">
+							<a href="<?php echo esc_url( $link_data['url'] ); ?>" class="scene-thumb"<?php echo $link_data['target']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php echo $link_data['rel']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+								<?php echo $thumb_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+							</a>
+							<div class="scene-card-content">
+								<?php if ( ! empty( $term_label ) ) : ?>
+									<p class="meta"><?php echo esc_html( $term_label ); ?></p>
+								<?php endif; ?>
+								<h3><a href="<?php echo esc_url( $link_data['url'] ); ?>"<?php echo $link_data['target']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php echo $link_data['rel']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html( $title ); ?></a></h3>
+								<?php if ( ! empty( $description ) ) : ?>
+									<p><?php echo esc_html( $description ); ?></p>
+								<?php endif; ?>
+							</div>
+						</article>
+					<?php endwhile; ?>
+				</div>
+
+				<?php echo $pagination_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			<?php else : ?>
+				<div class="scene-empty-state reveal">
+					<p>No episodes found yet. Add `scene` entries to populate this archive.</p>
+				</div>
+			<?php endif; ?>
+		</div>
+	</section>
 	<?php
 	wp_reset_postdata();
 
-	return ob_get_clean();
+	$output = shortcode_unautop( trim( ob_get_clean() ) );
+	$output = preg_replace( '#<p>\s*</p>#i', '', $output );
+	$output = preg_replace( '#<p>(\s|&nbsp;)*</p>#i', '', $output );
+	$output = preg_replace( '#<br\s*/?>\s*(?=<img)#i', '', $output );
+	$output = preg_replace( '#<a([^>]*)>\s*<br\s*/?>#i', '<a$1>', $output );
+
+	return $output;
 }
 add_shortcode( 'property_listings_scene_archive', 'property_listings_render_scene_archive_shortcode' );
 
@@ -1000,3 +1069,33 @@ function property_listings_enqueue_editor_assets() {
 	);
 }
 add_action( 'enqueue_block_editor_assets', 'property_listings_enqueue_editor_assets' );
+
+function property_listings_strip_empty_paragraphs_from_markup( $content ) {
+	if ( ! is_string( $content ) || '' === $content ) {
+		return $content;
+	}
+
+	$content = preg_replace( '#<p>(?:\s|&nbsp;|<br\s*/?>)*</p>#i', '', $content );
+
+	return $content;
+}
+
+function property_listings_filter_rendered_block_markup( $block_content, $block ) {
+	if ( empty( $block_content ) || empty( $block['blockName'] ) ) {
+		return $block_content;
+	}
+
+	$allowed_blocks = array(
+		'core/template-part',
+		'core/shortcode',
+		'core/group',
+		'core/post-content',
+	);
+
+	if ( ! in_array( $block['blockName'], $allowed_blocks, true ) ) {
+		return $block_content;
+	}
+
+	return property_listings_strip_empty_paragraphs_from_markup( $block_content );
+}
+add_filter( 'render_block', 'property_listings_filter_rendered_block_markup', 10, 2 );
