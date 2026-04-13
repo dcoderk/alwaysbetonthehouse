@@ -70,6 +70,178 @@ function property_listings_render_page_intro() {
 }
 add_shortcode( 'property_listings_page_intro', 'property_listings_render_page_intro' );
 
+function property_listings_get_search_result_summary( $post ) {
+	$post = get_post( $post );
+
+	if ( ! $post instanceof WP_Post ) {
+		return '';
+	}
+
+	if ( 'agent' === $post->post_type ) {
+		$bio = property_listings_get_agent_meta( 'short_bio', $post->ID );
+
+		if ( is_string( $bio ) && '' !== trim( $bio ) ) {
+			return trim( wp_strip_all_tags( $bio ) );
+		}
+	}
+
+	if ( 'scene' === $post->post_type ) {
+		return property_listings_get_scene_card_description( $post->ID );
+	}
+
+	$excerpt = get_the_excerpt( $post );
+
+	if ( is_string( $excerpt ) && '' !== trim( $excerpt ) ) {
+		return trim( wp_strip_all_tags( $excerpt ) );
+	}
+
+	return '';
+}
+
+function property_listings_get_search_result_type_label( $post ) {
+	$post = get_post( $post );
+
+	if ( ! $post instanceof WP_Post ) {
+		return '';
+	}
+
+	if ( 'agent' === $post->post_type ) {
+		return 'Agent';
+	}
+
+	if ( 'scene' === $post->post_type ) {
+		return 'Episode';
+	}
+
+	return get_post_type_object( $post->post_type )->labels->singular_name ?? '';
+}
+
+function property_listings_get_search_result_meta_line( $post ) {
+	$post = get_post( $post );
+
+	if ( ! $post instanceof WP_Post ) {
+		return '';
+	}
+
+	if ( 'agent' === $post->post_type ) {
+		$occupation = property_listings_get_agent_meta( 'occupation', $post->ID );
+		$company    = property_listings_get_agent_meta( 'company', $post->ID );
+		$parts      = array_filter(
+			array(
+				is_string( $occupation ) ? trim( wp_strip_all_tags( $occupation ) ) : '',
+				is_string( $company ) ? trim( wp_strip_all_tags( $company ) ) : '',
+			)
+		);
+
+		return implode( ' · ', $parts );
+	}
+
+	if ( 'scene' === $post->post_type ) {
+		return property_listings_get_scene_homepage_meta( $post->ID );
+	}
+
+	return '';
+}
+
+function property_listings_get_search_result_thumbnail_html( $post ) {
+	$post = get_post( $post );
+
+	if ( ! $post instanceof WP_Post ) {
+		return '<div class="search-result-thumb search-result-thumb--placeholder" aria-hidden="true"></div>';
+	}
+
+	if ( 'scene' === $post->post_type ) {
+		return property_listings_clean_media_markup(
+			property_listings_get_scene_card_thumbnail( $post->ID, get_the_title( $post ) )
+		);
+	}
+
+	if ( has_post_thumbnail( $post ) ) {
+		return property_listings_clean_media_markup(
+			get_the_post_thumbnail(
+				$post,
+				'medium_large',
+				array(
+					'alt' => get_the_title( $post ),
+				)
+			)
+		);
+	}
+
+	return '<div class="search-result-thumb search-result-thumb--placeholder" aria-hidden="true"></div>';
+}
+
+function property_listings_render_search_results_shortcode() {
+	global $wp_query;
+
+	if ( ! is_search() ) {
+		return '';
+	}
+
+	$search_query = get_search_query();
+
+	ob_start();
+	?>
+	<section class="content-page-shell section-light">
+		<div class="container">
+			<div class="content-page-card reveal search-page-card">
+				<h1 class="search-page-title">Search Results</h1>
+				<?php if ( '' !== $search_query ) : ?>
+					<p class="content-page-intro">Results for "<?php echo esc_html( $search_query ); ?>" across agents and episodes.</p>
+				<?php endif; ?>
+
+				<hr class="section-divider" />
+
+				<?php if ( ! empty( $wp_query->posts ) ) : ?>
+					<div class="search-results-list">
+						<?php foreach ( $wp_query->posts as $post ) : ?>
+							<?php
+							$type_label = property_listings_get_search_result_type_label( $post );
+							$meta_line  = property_listings_get_search_result_meta_line( $post );
+							$summary    = property_listings_get_search_result_summary( $post );
+							$thumb_html = property_listings_get_search_result_thumbnail_html( $post );
+							$link_url   = get_permalink( $post );
+							$link_attrs = '';
+
+							if ( 'scene' === $post->post_type ) {
+								$link_data = property_listings_get_scene_card_link_data( $post->ID );
+								$link_url  = $link_data['url'];
+								$link_attrs = $link_data['target'] . $link_data['rel'];
+							}
+							?>
+							<article class="search-result-card">
+								<a class="search-result-media" href="<?php echo esc_url( $link_url ); ?>"<?php echo $link_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+									<?php echo $thumb_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								</a>
+								<div class="search-result-content">
+									<?php if ( ! empty( $type_label ) ) : ?>
+										<p class="meta"><?php echo esc_html( $type_label ); ?></p>
+									<?php endif; ?>
+									<h2><a href="<?php echo esc_url( $link_url ); ?>"<?php echo $link_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html( get_the_title( $post ) ); ?></a></h2>
+									<?php if ( ! empty( $meta_line ) ) : ?>
+										<p class="search-result-meta-line"><?php echo esc_html( $meta_line ); ?></p>
+									<?php endif; ?>
+									<?php if ( ! empty( $summary ) ) : ?>
+										<p><?php echo esc_html( $summary ); ?></p>
+									<?php endif; ?>
+								</div>
+							</article>
+						<?php endforeach; ?>
+					</div>
+				<?php else : ?>
+					<div class="search-empty-state">
+						<p>No matching agents or episodes were found.</p>
+					</div>
+				<?php endif; ?>
+			</div>
+		</div>
+	</section>
+	<?php
+
+	return trim( ob_get_clean() );
+}
+add_shortcode( 'property_listings_search_results', 'property_listings_render_search_results_shortcode' );
+
 function property_listings_get_agent_meta( $field_name, $post_id ) {
 	if ( function_exists( 'get_field' ) ) {
 		return get_field( $field_name, $post_id );
@@ -267,6 +439,74 @@ function property_listings_filter_scene_archive_query( $query ) {
 	);
 }
 add_action( 'pre_get_posts', 'property_listings_filter_scene_archive_query' );
+
+function property_listings_filter_search_query( $query ) {
+	if ( is_admin() || ! $query->is_main_query() || ! $query->is_search() ) {
+		return;
+	}
+
+	$query->set( 'post_type', array( 'agent', 'scene' ) );
+}
+add_action( 'pre_get_posts', 'property_listings_filter_search_query' );
+
+function property_listings_search_join_postmeta( $join, $query ) {
+	global $wpdb;
+
+	if ( is_admin() || ! $query->is_main_query() || ! $query->is_search() ) {
+		return $join;
+	}
+
+	if ( false === strpos( $join, 'property_listings_search_pm' ) ) {
+		$join .= " LEFT JOIN {$wpdb->postmeta} AS property_listings_search_pm ON ({$wpdb->posts}.ID = property_listings_search_pm.post_id)";
+	}
+
+	return $join;
+}
+add_filter( 'posts_join', 'property_listings_search_join_postmeta', 10, 2 );
+
+function property_listings_search_where_postmeta( $where, $query ) {
+	global $wpdb;
+
+	if ( is_admin() || ! $query->is_main_query() || ! $query->is_search() ) {
+		return $where;
+	}
+
+	$search_term = $query->get( 's' );
+
+	if ( ! is_string( $search_term ) || '' === trim( $search_term ) ) {
+		return $where;
+	}
+
+	$like      = '%' . $wpdb->esc_like( $search_term ) . '%';
+	$meta_keys = array( 'short_bio', 'occupation', 'company' );
+	$key_sql   = "'" . implode( "','", array_map( 'esc_sql', $meta_keys ) ) . "'";
+
+	$meta_search_sql = $wpdb->prepare(
+		"({$wpdb->posts}.post_type = 'agent' AND property_listings_search_pm.meta_key IN ({$key_sql}) AND property_listings_search_pm.meta_value LIKE %s)",
+		$like
+	);
+
+	$search_sql = $wpdb->prepare(
+		"({$wpdb->posts}.post_title LIKE %s)",
+		$like
+	);
+
+	if ( false !== strpos( $where, $search_sql ) ) {
+		$where = str_replace( $search_sql, '(' . $search_sql . ' OR ' . $meta_search_sql . ')', $where );
+	}
+
+	return $where;
+}
+add_filter( 'posts_where', 'property_listings_search_where_postmeta', 10, 2 );
+
+function property_listings_search_distinct_results( $distinct, $query ) {
+	if ( is_admin() || ! $query->is_main_query() || ! $query->is_search() ) {
+		return $distinct;
+	}
+
+	return 'DISTINCT';
+}
+add_filter( 'posts_distinct', 'property_listings_search_distinct_results', 10, 2 );
 
 function property_listings_get_scene_card_link_data( $post_id ) {
 	$link_data = array(
