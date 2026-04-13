@@ -1194,6 +1194,7 @@ function property_listings_register_blocks() {
 	$latest_episodes_editor_js_path   = get_theme_file_path( '/blocks/latest-episodes/editor.js' );
 	$featured_episodes_editor_js_path = get_theme_file_path( '/blocks/featured-episodes/editor.js' );
 	$subscribe_panel_editor_js_path   = get_theme_file_path( '/blocks/subscribe-panel/editor.js' );
+	$header_socials_editor_js_path    = get_theme_file_path( '/blocks/header-socials/editor.js' );
 
 	wp_register_script(
 		'property-listings-hero-slider-editor',
@@ -1243,11 +1244,20 @@ function property_listings_register_blocks() {
 		true
 	);
 
+	wp_register_script(
+		'property-listings-header-socials-editor',
+		get_theme_file_uri( '/blocks/header-socials/editor.js' ),
+		array( 'wp-blocks', 'wp-block-editor', 'wp-components', 'wp-element', 'wp-i18n' ),
+		file_exists( $header_socials_editor_js_path ) ? filemtime( $header_socials_editor_js_path ) : null,
+		true
+	);
+
 	register_block_type( get_theme_file_path( '/blocks/hero-slider' ) );
 	register_block_type( get_theme_file_path( '/blocks/host-section' ) );
 	register_block_type( get_theme_file_path( '/blocks/latest-episodes' ) );
 	register_block_type( get_theme_file_path( '/blocks/featured-episodes' ) );
 	register_block_type( get_theme_file_path( '/blocks/subscribe-panel' ) );
+	register_block_type( get_theme_file_path( '/blocks/header-socials' ) );
 }
 add_action( 'init', 'property_listings_register_blocks' );
 

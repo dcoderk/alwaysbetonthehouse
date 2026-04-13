@@ -1,0 +1,34 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "property-listings/header-socials",
+	"title": "Header Socials",
+	"category": "widgets",
+	"icon": "share",
+	"description": "Editable header social links with simple URL fields.",
+	"textdomain": "property-listings",
+	"keywords": ["header", "social", "icons"],
+	"editorScript": "property-listings-header-socials-editor",
+	"render": "file:./render.php",
+	"attributes": {
+		"xUrl": {
+			"type": "string",
+			"default": "#"
+		},
+		"instagramUrl": {
+			"type": "string",
+			"default": "#"
+		},
+		"tiktokUrl": {
+			"type": "string",
+			"default": "#"
+		},
+		"linkedinUrl": {
+			"type": "string",
+			"default": "#"
+		}
+	},
+	"supports": {
+		"html": false
+	}
+}

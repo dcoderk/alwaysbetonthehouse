@@ -611,29 +611,47 @@ nav.breadcrumbs span {
 }
 
 .site-header .social-list {
+	display: flex;
+	align-items: center;
 	flex: 0 0 auto;
 	gap: 0.5rem;
 	margin: 0;
 	padding: 0;
+	list-style: none;
 }
 
-.site-header .social-list .wp-social-link {
+.site-header .social-list .wp-social-link,
+.site-header .social-list .header-social-link {
 	background: transparent !important;
 	color: #fff !important;
 	border: 0;
 	border-radius: 0;
 	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	transition: none;
+	text-decoration: none;
 }
 
-.site-header .social-list .wp-social-link:hover {
+.site-header .social-list .wp-social-link:hover,
+.site-header .social-list .header-social-link:hover {
 	background: transparent !important;
 }
 
-.site-header .social-list .wp-social-link svg {
+.site-header .social-list .wp-social-link svg,
+.site-header .social-list .header-social-link i {
 	width: 16px;
 	height: 16px;
 	fill: currentColor;
+	font-size: 16px;
+	line-height: 1;
+}
+
+.site-header .social-list .header-social-item {
+	margin: 0;
+	padding: 20px;
+	list-style: none;
 }
 
 .site-header .social-list .wp-social-link svg path {
