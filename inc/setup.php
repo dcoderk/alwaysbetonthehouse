@@ -1016,6 +1016,108 @@ function property_listings_get_scene_agent_data( $post_id ) {
 	);
 }
 
+function property_listings_render_single_scene_shortcode() {
+	if ( ! is_singular( 'scene' ) ) {
+		return '';
+	}
+
+	$post_id        = get_queried_object_id();
+	$title          = get_the_title( $post_id );
+	$address        = property_listings_get_related_item_location( $post_id );
+	$description    = property_listings_get_scene_card_description( $post_id );
+	$price          = property_listings_get_scene_price( $post_id );
+	$agent_data     = property_listings_get_scene_agent_data( $post_id );
+	$link_data      = property_listings_get_scene_card_link_data( $post_id );
+	$watch_url      = property_listings_get_agent_meta( 'video_link', $post_id );
+	$image_html     = property_listings_clean_media_markup( property_listings_get_scene_card_thumbnail( $post_id, $title ) );
+	$platform_label = property_listings_get_scene_platform_label( $link_data['url'] );
+	$meta_label     = property_listings_get_scene_homepage_meta( $post_id );
+	$taxonomy       = property_listings_get_scene_taxonomy();
+	$term_label     = property_listings_get_scene_card_term_label( $post_id, $taxonomy );
+	$archive_link   = get_post_type_archive_link( 'scene' );
+	$watch_url      = is_string( $watch_url ) ? trim( $watch_url ) : '';
+
+	ob_start();
+	?>
+	<section class="single-scene-page section-light alt-surface">
+		<div class="container">
+			<div class="single-scene-intro reveal">
+				<?php if ( $archive_link ) : ?>
+					<a href="<?php echo esc_url( $archive_link ); ?>" class="single-scene-back">&larr; All Episodes</a>
+				<?php endif; ?>
+			</div>
+
+			<div class="featured-grid single-scene-featured-grid">
+				<article class="featured-card reveal single-scene-card">
+					<?php if ( ! empty( $image_html ) ) : ?>
+						<div class="featured-thumb single-scene-thumb">
+							<?php echo $image_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+						</div>
+					<?php else : ?>
+						<div class="featured-thumb single-scene-thumb" aria-hidden="true"></div>
+					<?php endif; ?>
+
+					<div class="featured-content single-scene-content">
+						<div class="single-scene-meta">
+							<?php if ( ! empty( $term_label ) ) : ?>
+								<p class="single-scene-kicker"><?php echo esc_html( $term_label ); ?></p>
+							<?php endif; ?>
+							<?php if ( ! empty( $meta_label ) ) : ?>
+								<p class="single-scene-episode-label"><?php echo esc_html( $meta_label ); ?></p>
+							<?php endif; ?>
+							<?php if ( ! empty( $platform_label ) ) : ?>
+								<p class="single-scene-platform"><?php echo esc_html( $platform_label ); ?></p>
+							<?php endif; ?>
+						</div>
+
+						<h1><?php echo esc_html( $title ); ?></h1>
+
+						<?php if ( ! empty( $address ) ) : ?>
+							<p class="featured-address"><?php echo esc_html( $address ); ?></p>
+						<?php endif; ?>
+
+						<?php if ( ! empty( $description ) ) : ?>
+							<p class="featured-description"><?php echo esc_html( $description ); ?></p>
+						<?php endif; ?>
+
+						<?php if ( ! empty( $price ) ) : ?>
+							<p class="featured-price"><?php echo esc_html( $price ); ?></p>
+						<?php endif; ?>
+
+						<?php if ( ! empty( $agent_data['name'] ) ) : ?>
+							<p class="featured-agent">
+								Agent:
+								<?php if ( ! empty( $agent_data['url'] ) ) : ?>
+									<a href="<?php echo esc_url( $agent_data['url'] ); ?>"><?php echo esc_html( $agent_data['name'] ); ?></a>
+								<?php else : ?>
+									<?php echo esc_html( $agent_data['name'] ); ?>
+								<?php endif; ?>
+							</p>
+						<?php endif; ?>
+
+						<div class="single-scene-actions">
+							<?php if ( '' !== $watch_url ) : ?>
+								<a href="<?php echo esc_url( $watch_url ); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-dark">Watch Episode</a>
+							<?php endif; ?>
+							<?php if ( $archive_link ) : ?>
+								<a href="<?php echo esc_url( $archive_link ); ?>" class="btn btn-gold">Browse Episodes</a>
+							<?php endif; ?>
+						</div>
+					</div>
+				</article>
+			</div>
+		</div>
+	</section>
+	<?php
+
+	$output = shortcode_unautop( trim( ob_get_clean() ) );
+	$output = preg_replace( '#<p>\s*</p>#i', '', $output );
+	$output = preg_replace( '#<p>(\s|&nbsp;)*</p>#i', '', $output );
+
+	return $output;
+}
+add_shortcode( 'property_listings_single_scene', 'property_listings_render_single_scene_shortcode' );
+
 function property_listings_render_latest_episodes_section( $args = array() ) {
 	$args = wp_parse_args(
 		$args,

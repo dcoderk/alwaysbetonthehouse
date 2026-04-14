@@ -1973,6 +1973,98 @@ article.scene-card.reveal br {
 	color: var(--muted-dark);
 }
 
+.single-scene-page {
+	padding: 48px 0 72px;
+}
+
+.single-scene-intro {
+	margin-bottom: 22px;
+}
+
+.single-scene-back {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--gold);
+	font-size: 0.9rem;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-decoration: none;
+	text-transform: uppercase;
+}
+
+.single-scene-back:hover {
+	color: #b58113;
+}
+
+.single-scene-featured-grid {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.single-scene-card {
+	display: grid;
+	grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+	min-height: 560px;
+}
+
+.single-scene-thumb {
+	height: 100%;
+	aspect-ratio: auto;
+}
+
+.single-scene-thumb img {
+	height: 100%;
+}
+
+.single-scene-content {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 40px 36px;
+}
+
+.single-scene-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px 14px;
+	margin-bottom: 16px;
+}
+
+.single-scene-kicker,
+.single-scene-episode-label,
+.single-scene-platform {
+	margin: 0;
+	color: var(--gold);
+	font-size: 0.8rem;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+}
+
+.single-scene-content h1 {
+	font-family: "Cormorant Garamond", serif;
+	font-size: clamp(2.8rem, 5vw, 4.25rem);
+	line-height: 0.95;
+	margin: 0 0 16px;
+}
+
+.single-scene-content .featured-address {
+	font-size: 1rem;
+	font-weight: 700;
+}
+
+.single-scene-content .featured-description {
+	font-size: 1rem;
+	line-height: 1.7;
+}
+
+.single-scene-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-top: 18px;
+}
+
 .pagination {
 	display: flex;
 	flex-wrap: wrap;
@@ -2052,6 +2144,15 @@ article.scene-card.reveal br {
 	.scene-library {
 		padding-bottom: 68px;
 	}
+
+	.single-scene-card {
+		grid-template-columns: minmax(0, 1fr);
+		min-height: 0;
+	}
+
+	.single-scene-thumb {
+		min-height: 340px;
+	}
 }
 
 @media (max-width: 520px) {
@@ -2074,6 +2175,22 @@ article.scene-card.reveal br {
 	.scene-thumb img,
 	.scene-thumb--placeholder {
 		height: 250px;
+	}
+
+	.single-scene-page {
+		padding: 32px 0 56px;
+	}
+
+	.single-scene-content {
+		padding: 28px 22px;
+	}
+
+	.single-scene-thumb {
+		min-height: 240px;
+	}
+
+	.single-scene-content h1 {
+		font-size: 2.5rem;
 	}
 
 	.pagination {
