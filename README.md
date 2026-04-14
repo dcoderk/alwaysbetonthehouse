@@ -2,21 +2,10 @@
 
 This theme is a custom WordPress block theme for the `always-bet-on-the-house` site.
 
-## Project Paths
+## Project URL
 
-- Theme: `C:\Users\Jay\Local Sites\always-bet-on-the-house\app\public\wp-content\themes\property-listing`
-- Static reference: `C:\JAYFILE\JAYFILE\Client\Mainstream\Wordpress\Rico\html\alwaysbetonthehouse\index.html`
 
-## Current Custom Work
 
-### Header
-
-- Social icon borders removed
-- Social icon hover updated to match nav underline behavior
-- Mobile menu social icons cleaned up to match desktop styling
-
-Main file:
-- `assets/css/main.css`
 
 ### Search
 
