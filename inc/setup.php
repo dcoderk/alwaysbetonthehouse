@@ -1428,6 +1428,211 @@ function property_listings_output_agent_schema() {
 }
 add_action( 'wp_head', 'property_listings_output_agent_schema', 5 );
 
+function property_listings_get_schema_logo_data() {
+	$logo_id  = (int) get_theme_mod( 'custom_logo' );
+	$logo_url = '';
+	$width    = 0;
+	$height   = 0;
+
+	if ( $logo_id ) {
+		$logo_image = wp_get_attachment_image_src( $logo_id, 'full' );
+
+		if ( is_array( $logo_image ) && ! empty( $logo_image[0] ) ) {
+			$logo_url = $logo_image[0];
+			$width    = ! empty( $logo_image[1] ) ? (int) $logo_image[1] : 0;
+			$height   = ! empty( $logo_image[2] ) ? (int) $logo_image[2] : 0;
+		}
+	}
+
+	if ( '' === $logo_url ) {
+		$default_logo_path = get_theme_file_path( '/assets/images/logo.png' );
+
+		if ( file_exists( $default_logo_path ) ) {
+			$logo_url  = get_theme_file_uri( '/assets/images/logo.png' );
+			$image_size = @getimagesize( $default_logo_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+			if ( is_array( $image_size ) ) {
+				$width  = ! empty( $image_size[0] ) ? (int) $image_size[0] : 0;
+				$height = ! empty( $image_size[1] ) ? (int) $image_size[1] : 0;
+			}
+		}
+	}
+
+	if ( '' === $logo_url ) {
+		return array();
+	}
+
+	$logo_schema = array(
+		'@type' => 'ImageObject',
+		'url'   => esc_url_raw( $logo_url ),
+	);
+
+	if ( $width > 0 ) {
+		$logo_schema['width'] = $width;
+	}
+
+	if ( $height > 0 ) {
+		$logo_schema['height'] = $height;
+	}
+
+	return $logo_schema;
+}
+
+function property_listings_get_schema_same_as_urls() {
+	$same_as = array();
+
+	$menu_locations = get_nav_menu_locations();
+
+	if ( empty( $menu_locations['social'] ) ) {
+		return array();
+	}
+
+	$menu_items = wp_get_nav_menu_items( $menu_locations['social'] );
+
+	if ( empty( $menu_items ) || is_wp_error( $menu_items ) ) {
+		return array();
+	}
+
+	foreach ( $menu_items as $menu_item ) {
+		if ( empty( $menu_item->url ) ) {
+			continue;
+		}
+
+		$same_as[] = esc_url_raw( $menu_item->url );
+	}
+
+	return array_values( array_unique( array_filter( $same_as ) ) );
+}
+
+function property_listings_output_site_schema() {
+	if ( is_admin() || is_feed() || is_robots() || is_trackback() ) {
+		return;
+	}
+
+	$site_name        = get_bloginfo( 'name' );
+	$site_description = get_bloginfo( 'description' );
+	$site_url         = home_url( '/' );
+	$search_url       = add_query_arg( 's', '{search_term_string}', $site_url );
+	$logo_schema      = property_listings_get_schema_logo_data();
+	$same_as          = property_listings_get_schema_same_as_urls();
+
+	$website_schema = array(
+		'@context' => 'https://schema.org',
+		'@type'    => 'WebSite',
+		'@id'      => trailingslashit( $site_url ) . '#website',
+		'url'      => $site_url,
+		'name'     => $site_name,
+	);
+
+	if ( '' !== trim( $site_description ) ) {
+		$website_schema['description'] = $site_description;
+	}
+
+	$website_schema['potentialAction'] = array(
+		'@type'       => 'SearchAction',
+		'target'      => $search_url,
+		'query-input' => 'required name=search_term_string',
+	);
+
+	$organization_schema = array(
+		'@context' => 'https://schema.org',
+		'@type'    => 'Organization',
+		'@id'      => trailingslashit( $site_url ) . '#organization',
+		'url'      => $site_url,
+		'name'     => $site_name,
+	);
+
+	if ( ! empty( $logo_schema ) ) {
+		$organization_schema['logo'] = $logo_schema;
+	}
+
+	if ( ! empty( $same_as ) ) {
+		$organization_schema['sameAs'] = $same_as;
+	}
+
+	echo '<script type="application/ld+json">' . wp_json_encode( $website_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
+	echo '<script type="application/ld+json">' . wp_json_encode( $organization_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
+}
+add_action( 'wp_head', 'property_listings_output_site_schema', 1 );
+
+function property_listings_get_scene_thumbnail_url( $post_id ) {
+	$video_screenshot = property_listings_get_agent_meta( 'video_screenshot', $post_id );
+
+	if ( is_array( $video_screenshot ) && ! empty( $video_screenshot['ID'] ) ) {
+		$thumbnail_url = wp_get_attachment_image_url( (int) $video_screenshot['ID'], 'full' );
+
+		if ( $thumbnail_url ) {
+			return $thumbnail_url;
+		}
+	}
+
+	if ( is_array( $video_screenshot ) && ! empty( $video_screenshot['url'] ) ) {
+		return esc_url_raw( $video_screenshot['url'] );
+	}
+
+	if ( is_string( $video_screenshot ) && '' !== trim( $video_screenshot ) ) {
+		return esc_url_raw( trim( $video_screenshot ) );
+	}
+
+	if ( has_post_thumbnail( $post_id ) ) {
+		$thumbnail_url = get_the_post_thumbnail_url( $post_id, 'full' );
+
+		if ( $thumbnail_url ) {
+			return $thumbnail_url;
+		}
+	}
+
+	return '';
+}
+
+function property_listings_output_scene_schema() {
+	if ( ! is_singular( 'scene' ) ) {
+		return;
+	}
+
+	$post_id     = get_queried_object_id();
+	$title       = get_the_title( $post_id );
+	$description = property_listings_get_scene_card_description( $post_id );
+	$thumbnail   = property_listings_get_scene_thumbnail_url( $post_id );
+	$link_data   = property_listings_get_scene_card_link_data( $post_id );
+	$agent_data  = property_listings_get_scene_agent_data( $post_id );
+	$permalink   = get_permalink( $post_id );
+	$video_url   = ! empty( $link_data['url'] ) ? $link_data['url'] : $permalink;
+
+	$schema = array(
+		'@context'         => 'https://schema.org',
+		'@type'            => 'VideoObject',
+		'@id'              => trailingslashit( $permalink ) . '#video',
+		'url'              => $permalink,
+		'mainEntityOfPage' => $permalink,
+		'name'             => $title,
+		'description'      => $description,
+		'uploadDate'       => get_post_time( 'c', true, $post_id ),
+	);
+
+	if ( '' !== trim( $video_url ) ) {
+		$schema['contentUrl'] = esc_url_raw( $video_url );
+	}
+
+	if ( '' !== trim( $thumbnail ) ) {
+		$schema['thumbnailUrl'] = esc_url_raw( $thumbnail );
+	}
+
+	if ( ! empty( $agent_data['name'] ) ) {
+		$schema['actor'] = array(
+			'@type' => 'Person',
+			'name'  => $agent_data['name'],
+		);
+
+		if ( ! empty( $agent_data['url'] ) ) {
+			$schema['actor']['url'] = esc_url_raw( $agent_data['url'] );
+		}
+	}
+
+	echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
+}
+add_action( 'wp_head', 'property_listings_output_scene_schema', 5 );
+
 function property_listings_register_blocks() {
 	$hero_slider_editor_js_path       = get_theme_file_path( '/blocks/hero-slider/editor.js' );
 	$host_section_editor_js_path      = get_theme_file_path( '/blocks/host-section/editor.js' );
