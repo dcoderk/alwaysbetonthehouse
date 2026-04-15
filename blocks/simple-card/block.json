@@ -1,0 +1,34 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "property-listings/simple-card",
+	"title": "Simple Card",
+	"category": "widgets",
+	"icon": "index-card",
+	"description": "A simple learning block with a heading, text, and button.",
+	"textdomain": "property-listings",
+	"keywords": ["card", "simple", "starter"],
+	"editorScript": "property-listings-simple-card-editor",
+	"render": "file:./render.php",
+	"attributes": {
+		"title": {
+			"type": "string",
+			"default": "Simple Card Title"
+		},
+		"text": {
+			"type": "string",
+			"default": "This is a starter custom block. Edit the content in the sidebar or directly in the block preview."
+		},
+		"buttonText": {
+			"type": "string",
+			"default": "Learn More"
+		},
+		"buttonUrl": {
+			"type": "string",
+			"default": "#"
+		}
+	},
+	"supports": {
+		"html": false
+	}
+}
