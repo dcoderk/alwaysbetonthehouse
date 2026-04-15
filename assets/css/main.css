@@ -738,6 +738,10 @@ nav.breadcrumbs span {
 	cursor: pointer;
 }
 
+article.search-result-card br {
+    display: none;
+}
+
 .site-header .site-nav {
 	display: flex;
 	align-items: center;
