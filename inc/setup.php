@@ -1213,24 +1213,78 @@ function property_listings_render_latest_episodes_shortcode() {
 }
 add_shortcode( 'property_listings_latest_episodes', 'property_listings_render_latest_episodes_shortcode' );
 
-function property_listings_get_agent_scenes( $agent_id ) {
+function property_listings_get_agent_scene_meta_query( $agent_id ) {
+	return array(
+		'relation' => 'OR',
+		array(
+			'key'     => 'agent_on_video',
+			'value'   => (int) $agent_id,
+			'compare' => '=',
+		),
+		array(
+			'key'     => 'agent_on_video',
+			'value'   => '"' . (int) $agent_id . '"',
+			'compare' => 'LIKE',
+		),
+		array(
+			'key'     => 'agent_on_video',
+			'value'   => 'i:' . (int) $agent_id . ';',
+			'compare' => 'LIKE',
+		),
+	);
+}
+
+function property_listings_get_agent_scenes( $agent_id, $posts_per_page = 4 ) {
 	$related_query = new WP_Query(
 		array(
 			'post_type'      => 'scene',
 			'post_status'    => 'publish',
-			'posts_per_page' => 4,
-			'meta_query'     => array(
-				array(
-					'key'     => 'agent_on_video',
-					'value'   => '"' . (int) $agent_id . '"',
-					'compare' => 'LIKE',
-				),
-			),
+			'posts_per_page' => $posts_per_page,
+			'meta_query'     => property_listings_get_agent_scene_meta_query( $agent_id ),
 		)
 	);
 
 	return $related_query->posts;
 }
+
+function property_listings_get_admin_agent_id_from_acf_post_id( $post_id ) {
+	if ( is_numeric( $post_id ) ) {
+		return (int) $post_id;
+	}
+
+	if ( is_string( $post_id ) && preg_match( '/^post_(\d+)$/', $post_id, $matches ) ) {
+		return (int) $matches[1];
+	}
+
+	return 0;
+}
+
+function property_listings_filter_agent_latest_videos_query( $args, $field, $post_id ) {
+	$agent_id = property_listings_get_admin_agent_id_from_acf_post_id( $post_id );
+
+	if ( ! $agent_id || 'agent' !== get_post_type( $agent_id ) ) {
+		return $args;
+	}
+
+	$args['post_type']      = 'scene';
+	$args['post_status']    = 'publish';
+	$args['posts_per_page'] = -1;
+	$args['meta_query']     = property_listings_get_agent_scene_meta_query( $agent_id );
+
+	return $args;
+}
+add_filter( 'acf/fields/relationship/query/name=latest_videos', 'property_listings_filter_agent_latest_videos_query', 10, 3 );
+
+function property_listings_load_agent_latest_videos_value( $value, $post_id, $field ) {
+	$agent_id = property_listings_get_admin_agent_id_from_acf_post_id( $post_id );
+
+	if ( ! $agent_id || 'agent' !== get_post_type( $agent_id ) ) {
+		return $value;
+	}
+
+	return wp_list_pluck( property_listings_get_agent_scenes( $agent_id, -1 ), 'ID' );
+}
+add_filter( 'acf/load_value/name=latest_videos', 'property_listings_load_agent_latest_videos_value', 10, 3 );
 
 function property_listings_render_agent_profile_shortcode() {
 	if ( ! is_singular( 'agent' ) ) {
@@ -1252,7 +1306,6 @@ function property_listings_render_agent_profile_shortcode() {
 	$website        = property_listings_get_agent_meta( 'website', $post_id );
 	$instagram      = property_listings_get_agent_meta( 'instagram', $post_id );
 	$linkedin       = property_listings_get_agent_meta( 'linkedin', $post_id );
-	$latest_videos  = property_listings_get_agent_meta( 'latest_videos', $post_id );
 	$latest_intro   = property_listings_get_agent_meta( 'latest_section_intro', $post_id );
 	$permalink      = get_permalink( $post_id );
 	$related_scenes = property_listings_get_agent_scenes( $post_id );
@@ -1282,10 +1335,6 @@ function property_listings_render_agent_profile_shortcode() {
 	$x_share        = 'https://twitter.com/intent/tweet?url=' . rawurlencode( $permalink ) . '&text=' . rawurlencode( $agent_name );
 	$linkedin_share = ! empty( $linkedin ) ? $linkedin : 'https://www.linkedin.com/sharing/share-offsite/?url=' . rawurlencode( $permalink );
 	$instagram_url  = ! empty( $instagram ) ? $instagram : '#';
-
-	if ( ! is_array( $latest_videos ) ) {
-		$latest_videos = array();
-	}
 
 	ob_start();
 	?>
