@@ -201,6 +201,41 @@ document.addEventListener("DOMContentLoaded", function () {
 		initHeroSlider(sliderRoot);
 	});
 
+	document.querySelectorAll(".agent-share").forEach(function (shareRoot) {
+		const shareToggle = shareRoot.querySelector(".agent-share__toggle");
+		const shareMenu = shareRoot.querySelector(".agent-share__menu");
+
+		if (!shareToggle || !shareMenu) {
+			return;
+		}
+
+		const closeShareMenu = function () {
+			shareMenu.hidden = true;
+			shareToggle.setAttribute("aria-expanded", "false");
+			shareToggle.setAttribute("aria-label", "Show share buttons");
+		};
+
+		shareToggle.addEventListener("click", function () {
+			const shouldOpen = shareMenu.hidden;
+
+			shareMenu.hidden = !shouldOpen;
+			shareToggle.setAttribute("aria-expanded", String(shouldOpen));
+			shareToggle.setAttribute("aria-label", shouldOpen ? "Hide share buttons" : "Show share buttons");
+		});
+
+		document.addEventListener("click", function (event) {
+			if (!shareRoot.contains(event.target)) {
+				closeShareMenu();
+			}
+		});
+
+		document.addEventListener("keydown", function (event) {
+			if (event.key === "Escape") {
+				closeShareMenu();
+			}
+		});
+	});
+
 	if (document.querySelector(".hero") && !document.querySelector(".hero-slider-block")) {
 		const fallbackSliderRoot = document.querySelector(".hero");
 

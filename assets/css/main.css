@@ -1596,6 +1596,7 @@ a.wp-block-social-link-anchor:focus-visible::after {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 12px;
+	align-items: center;
 }
 
 .agent-share__icon {
@@ -1608,14 +1609,32 @@ a.wp-block-social-link-anchor:focus-visible::after {
 	border-radius: 999px;
 	background: rgba(255, 255, 255, 0.03);
 	color: #f6ebd7;
+	cursor: pointer;
 	text-decoration: none;
 	transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
-.agent-share__icon:hover {
+.agent-share__icon:hover,
+.agent-share__icon:focus-visible {
 	transform: translateY(-1px);
 	border-color: var(--gold);
 	background: rgba(212, 165, 68, 0.12);
+	outline: none;
+}
+
+.agent-share__toggle[aria-expanded="true"] {
+	border-color: var(--gold);
+	background: rgba(212, 165, 68, 0.16);
+}
+
+.agent-share__menu {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.agent-share__menu[hidden] {
+	display: none;
 }
 
 .agent-share__icon i {

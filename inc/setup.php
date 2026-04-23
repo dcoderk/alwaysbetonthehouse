@@ -1333,8 +1333,7 @@ function property_listings_render_agent_profile_shortcode() {
 
 	$facebook_share = 'https://www.facebook.com/sharer/sharer.php?u=' . rawurlencode( $permalink );
 	$x_share        = 'https://twitter.com/intent/tweet?url=' . rawurlencode( $permalink ) . '&text=' . rawurlencode( $agent_name );
-	$linkedin_share = ! empty( $linkedin ) ? $linkedin : 'https://www.linkedin.com/sharing/share-offsite/?url=' . rawurlencode( $permalink );
-	$instagram_url  = ! empty( $instagram ) ? $instagram : '#';
+	$linkedin_share = 'https://www.linkedin.com/sharing/share-offsite/?url=' . rawurlencode( $permalink );
 
 	ob_start();
 	?>
@@ -1399,10 +1398,14 @@ function property_listings_render_agent_profile_shortcode() {
 							<hr class="section-divider" />
 							<p class="share-label">Share This</p>
 							<div class="agent-share">
-								<a class="agent-share__icon" href="<?php echo esc_url( $facebook_share ); ?>" target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook"><i class="bi bi-facebook" aria-hidden="true"></i></a>
-								<a class="agent-share__icon<?php echo '#' === $instagram_url ? ' is-disabled' : ''; ?>" href="<?php echo esc_url( $instagram_url ); ?>"<?php echo '#' === $instagram_url ? ' aria-disabled="true"' : ' target="_blank" rel="noopener noreferrer" itemprop="sameAs"'; ?> aria-label="Share on Instagram"><i class="bi bi-instagram" aria-hidden="true"></i></a>
-								<a class="agent-share__icon" href="<?php echo esc_url( $x_share ); ?>" target="_blank" rel="noopener noreferrer" aria-label="Share on X"><i class="bi bi-twitter-x" aria-hidden="true"></i></a>
-								<a class="agent-share__icon" href="<?php echo esc_url( $linkedin_share ); ?>" target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn"<?php echo ! empty( $linkedin ) ? ' itemprop="sameAs"' : ''; ?>><i class="bi bi-linkedin" aria-hidden="true"></i></a>
+								<button class="agent-share__icon agent-share__toggle" type="button" aria-expanded="false" aria-label="Show share buttons">
+									<i class="bi bi-share" aria-hidden="true"></i>
+								</button>
+								<div class="agent-share__menu" hidden>
+									<a class="agent-share__icon" href="<?php echo esc_url( $facebook_share ); ?>" target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook"><i class="bi bi-facebook" aria-hidden="true"></i></a>
+									<a class="agent-share__icon" href="<?php echo esc_url( $x_share ); ?>" target="_blank" rel="noopener noreferrer" aria-label="Share on X"><i class="bi bi-twitter-x" aria-hidden="true"></i></a>
+									<a class="agent-share__icon" href="<?php echo esc_url( $linkedin_share ); ?>" target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn"><i class="bi bi-linkedin" aria-hidden="true"></i></a>
+								</div>
 							</div>
 							<meta itemprop="url" content="<?php echo esc_url( $permalink ); ?>" />
 						</div>
@@ -1503,6 +1506,112 @@ function property_listings_output_seo_meta_tags() {
 	}
 }
 add_action( 'wp_head', 'property_listings_output_seo_meta_tags', 1 );
+
+function property_listings_get_social_meta_title( $post_id ) {
+	$seo_title = property_listings_get_seo_field_value( 'page_title', $post_id );
+
+	if ( '' !== $seo_title ) {
+		return $seo_title;
+	}
+
+	if ( $post_id ) {
+		return get_the_title( $post_id );
+	}
+
+	return get_bloginfo( 'name' );
+}
+
+function property_listings_get_social_meta_description( $post_id ) {
+	$meta_description = property_listings_get_seo_field_value( 'meta_description', $post_id );
+
+	if ( '' !== $meta_description ) {
+		return $meta_description;
+	}
+
+	if ( $post_id && 'agent' === get_post_type( $post_id ) ) {
+		$agent_bio = property_listings_get_agent_meta( 'short_bio', $post_id );
+
+		if ( is_string( $agent_bio ) && '' !== trim( $agent_bio ) ) {
+			return trim( wp_strip_all_tags( $agent_bio ) );
+		}
+	}
+
+	if ( $post_id && 'scene' === get_post_type( $post_id ) ) {
+		return property_listings_get_scene_card_description( $post_id );
+	}
+
+	if ( $post_id && has_excerpt( $post_id ) ) {
+		return trim( wp_strip_all_tags( get_the_excerpt( $post_id ) ) );
+	}
+
+	return get_bloginfo( 'description' );
+}
+
+function property_listings_get_social_meta_image_url( $post_id ) {
+	if ( $post_id && 'scene' === get_post_type( $post_id ) ) {
+		$scene_image = property_listings_get_scene_thumbnail_url( $post_id );
+
+		if ( '' !== trim( $scene_image ) ) {
+			return $scene_image;
+		}
+	}
+
+	if ( $post_id && has_post_thumbnail( $post_id ) ) {
+		$featured_image = get_the_post_thumbnail_url( $post_id, 'full' );
+
+		if ( $featured_image ) {
+			return $featured_image;
+		}
+	}
+
+	$logo_data = property_listings_get_schema_logo_data();
+
+	return ! empty( $logo_data['url'] ) ? $logo_data['url'] : '';
+}
+
+function property_listings_output_social_meta_tags() {
+	if ( is_admin() || is_feed() || is_robots() || is_trackback() ) {
+		return;
+	}
+
+	$post_id = property_listings_get_seo_post_id();
+
+	if ( ! $post_id && ! is_front_page() ) {
+		return;
+	}
+
+	$title       = property_listings_get_social_meta_title( $post_id );
+	$description = property_listings_get_social_meta_description( $post_id );
+	$image_url   = property_listings_get_social_meta_image_url( $post_id );
+	$url         = $post_id ? get_permalink( $post_id ) : home_url( '/' );
+	$type        = is_front_page() ? 'website' : 'article';
+
+	if ( '' === trim( $title ) ) {
+		$title = get_bloginfo( 'name' );
+	}
+
+	echo '<meta property="og:type" content="' . esc_attr( $type ) . '" />' . "\n";
+	echo '<meta property="og:title" content="' . esc_attr( $title ) . '" />' . "\n";
+
+	if ( '' !== trim( $description ) ) {
+		echo '<meta property="og:description" content="' . esc_attr( $description ) . '" />' . "\n";
+	}
+
+	echo '<meta property="og:url" content="' . esc_url( $url ) . '" />' . "\n";
+	echo '<meta property="og:site_name" content="' . esc_attr( get_bloginfo( 'name' ) ) . '" />' . "\n";
+	echo '<meta name="twitter:card" content="' . esc_attr( $image_url ? 'summary_large_image' : 'summary' ) . '" />' . "\n";
+	echo '<meta name="twitter:title" content="' . esc_attr( $title ) . '" />' . "\n";
+
+	if ( '' !== trim( $description ) ) {
+		echo '<meta name="twitter:description" content="' . esc_attr( $description ) . '" />' . "\n";
+	}
+
+	if ( '' !== trim( $image_url ) ) {
+		echo '<meta property="og:image" content="' . esc_url( $image_url ) . '" />' . "\n";
+		echo '<meta name="twitter:image" content="' . esc_url( $image_url ) . '" />' . "\n";
+	}
+}
+add_action( 'wp_head', 'property_listings_output_social_meta_tags', 2 );
 
 function property_listings_output_agent_schema() {
 	if ( ! is_singular( 'agent' ) ) {
